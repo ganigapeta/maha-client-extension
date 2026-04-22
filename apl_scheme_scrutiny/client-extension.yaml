@@ -1,0 +1,16 @@
+assemble:
+    - from: build/static
+      into: static
+abovepovertylane-scheme-scrutiny:
+    cssURLs:
+        - css/main.*.css
+    friendlyURLMapping: abovepovertylane-scheme-scrutiny
+    htmlElementName: abovepovertylane-scheme-scrutiny
+    instanceable: false
+    name: Above Poverty Lane Scheme Scrutiny
+    portletCategoryName: category.client-extensions
+    type: customElement
+    urls:
+        - js/main.*.js
+    useESM: true
+    

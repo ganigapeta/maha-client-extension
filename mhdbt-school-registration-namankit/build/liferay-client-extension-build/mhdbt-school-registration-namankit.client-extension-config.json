@@ -1,0 +1,17 @@
+{
+  "com.liferay.client.extension.type.configuration.CETConfiguration~mhdbt-school-namankit-reg" : {
+    ":configurator:policy" : "force",
+    "baseURL" : "${portalURL}/o/mhdbt-school-registration-namankit",
+    "buildTimestamp" : 1776604710369,
+    "description" : "",
+    "dxp.lxc.liferay.com.virtualInstanceId" : "default",
+    "name" : "MahaDBT Namankit School Registration",
+    "projectId" : "mhdbtschoolregistrationnamankit",
+    "projectName" : "mhdbt-school-registration-namankit",
+    "properties" : [ ],
+    "sourceCodeURL" : "",
+    "type" : "customElement",
+    "typeSettings" : [ "friendlyURLMapping=mhdbt-school-namankit-reg", "instanceable=false", "urls=js/main.ded1eb71.js", "useESM=true", "htmlElementName=mhdbt-school-namankit-reg", "cssURLs=css/main.c3bcb8e3.css", "portletCategoryName=category.client-extensions" ],
+    "webContextPath" : "/mhdbt-school-registration-namankit"
+  }
+}

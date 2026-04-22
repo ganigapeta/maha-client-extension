@@ -1,0 +1,223 @@
+:root {
+    --primary-color: #002B70;
+    --secondary-color: #002B70;
+    --accent-color: #002B70;
+    --light-bg: #f5f7fa;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --success-color: #2e7d32;
+    --warning-color: #f57c00;
+}
+
+body {
+    background-color: var(--light-bg);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+.header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 1.5rem 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    border: none;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* .card-header {
+    background-color: var(--accent-color);
+    color: white;
+    border-radius: 12px 12px 0 0 ! important;
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+} */
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.form-control,
+.form-select {
+    border-radius: 8px;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.25rem rgba(33, 150, 243, 0.25);
+}
+
+.verification-status {
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.status-success {
+    background-color: rgba(46, 125, 50, 0.1);
+    border: 1px solid var(--success-color);
+    color: var(--success-color);
+}
+
+.status-pending {
+    background-color: rgba(245, 124, 0, 0.1);
+    border: 1px solid var(--warning-color);
+    color: var(--warning-color);
+}
+
+.user-type-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.user-type-card:hover {
+    border-color: var(--accent-color);
+    transform: scale(1.03);
+}
+
+.user-type-card.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(13, 71, 161, 0.05);
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.step::before {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    right: -50%;
+    height: 2px;
+    background-color: #e0e0e0;
+    z-index: -1;
+}
+
+.step:last-child::before {
+    display: none;
+}
+
+.step-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.step.active .step-circle {
+    background-color: var(--primary-color);
+}
+
+.step.completed .step-circle {
+    background-color: var(--success-color);
+}
+
+.step-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.step.active .step-label {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.footer {
+    background-color: #f8f9fa;
+    padding: 1.5rem 0;
+    margin-top: 3rem;
+    border-top: 1px solid #e0e0e0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.document-preview {
+    border: 1px dashed #ced4da;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    margin-top: 1rem;
+    background-color: #f8f9fa;
+}
+
+.scheme-badge {
+    display: inline-block;
+    padding: 0.35rem 0.65rem;
+    margin: 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 4rem;
+    background-color: rgba(33, 150, 243, 0.1);
+    color: var(--primary-color);
+    border: 1px solid rgba(33, 150, 243, 0.2);
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    max-width: 350px;
+}
+
+.notification.success {
+    background-color: white;
+    border-left: 4px solid var(--success-color);
+    color: var(--success-color);
+}
+
+.notification.error {
+    background-color: white;
+    border-left: 4px solid #d32f2f;
+    color: #d32f2f;
+}
+
+.card-header {
+    background-color: #d32f2f;
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+}

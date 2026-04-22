@@ -1,0 +1,16 @@
+assemble:
+    - from: build/static
+      into: static
+mhdbt-school-namankit-reg:
+    cssURLs:
+        - css/main.*.css
+    friendlyURLMapping: mhdbt-school-namankit-reg
+    htmlElementName: mhdbt-school-namankit-reg
+    instanceable: false
+    name: MahaDBT Namankit School Registration
+    portletCategoryName: category.client-extensions
+    type: customElement
+    urls:
+        - js/main.*.js
+    useESM: true
+    

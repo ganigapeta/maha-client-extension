@@ -1,0 +1,173 @@
+/* ── FIX: --dark-text was missing from :root — this is why borders weren't showing ── */
+:root {
+  --primary-color: #002b70;
+  --secondary-color: #002b70;
+  --success-color: #198754;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #0dcaf0;
+  --light-color: #f8f9fa;
+  --dark-color: #212529;
+  --purple-color: #6f42c1;
+  --teal-color: #20c997;
+  --dark-text: #212529;
+  --light-bg: #f0f2f5;
+  --primary-rgb: 0, 43, 112; /* Added RGB values for box-shadow */
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--light-bg);
+  color: var(--dark-text);
+  margin: 0;
+  padding: 0;
+}
+
+/* Main container */
+.container {
+  max-width: 1400px;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+/* ── Card ── */
+.card {
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+  background-color: white;
+  overflow: hidden;
+  border-radius: 8px; /* ADD THIS */
+}
+
+/* Card header - top radius only, no bottom border */
+.card-header {
+  background-color: var(--primary-color);
+  border:  none !important;
+  font-weight: 600;
+  color: var(--light-color);
+  padding: 1rem 1.5rem;
+  border-radius: 8px 8px 0 0; /* CHANGE THIS - top-left, top-right radius */
+  margin: 0;
+}
+
+/* Card body - bottom radius */
+.card-body {
+  padding: 1.5rem !important;
+  border: none !important;
+  border-radius: 0 0 8px 8px !important; /* CHANGE THIS - bottom-left, bottom-right radius */
+}
+
+/* Form labels */
+.form-label {
+  margin-bottom: 0.5rem;
+  display: block;
+  font-weight: 500;
+  color: var(--dark-text);
+}
+
+/* ── Select: Bootstrap-style with focus effect ── */
+.form-select {
+  font-family: 'Poppins', sans-serif;
+  border: 1px solid #ced4da !important; /* Bootstrap default border */
+  border-radius: 0.375rem !important; /* Bootstrap default border-radius */
+  padding: 0.6rem 1rem !important;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--dark-text);
+  background-color: white;
+  cursor: pointer;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  height: 48px;
+  width: 100%;
+}
+
+.form-select:focus {
+  border-color: #86b7fe !important; /* Bootstrap focus border color */
+  outline: 0 !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important; /* Bootstrap focus shadow */
+}
+
+/* Invalid state */
+.form-select.is-invalid {
+  border-color: var(--danger-color) !important;
+}
+
+.form-select.is-invalid:focus {
+  border-color: var(--danger-color) !important;
+  box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+}
+
+/* Error message */
+.invalid-feedback {
+  display: block;
+  color: var(--danger-color);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+/* Text danger */
+.text-danger {
+  color: var(--danger-color) !important;
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--primary-color);
+  border: none;
+  border-radius: 6px;
+  padding: 9px 28px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  color: #fff;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.btn-primary:hover {
+  background: #001f52;
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 0.25rem rgba(0, 43, 112, 0.5);
+}
+
+.btn-outline-primary {
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  background: transparent;
+  border-radius: 6px;
+  padding: 9px 28px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-outline-primary:hover {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.btn-outline-primary:focus {
+  box-shadow: 0 0 0 0.25rem rgba(0, 43, 112, 0.5);
+}
+
+/* Flex utilities for buttons */
+.flex-fill {
+  flex: 1 1 auto !important;
+}
+
+.gap-3 {
+  gap: 1rem !important;
+}
+
+/* Align items */
+.align-items-end {
+  align-items: flex-end !important;
+}

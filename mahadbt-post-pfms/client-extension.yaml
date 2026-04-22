@@ -1,0 +1,15 @@
+assemble:
+    - from: build/static
+      into: static
+mahadbt-post-pfms:
+    cssURLs:
+        - css/main.*.css
+    friendlyURLMapping: mahadbt-post-pfms
+    htmlElementName: mahadbt-post-pfms
+    instanceable: false
+    name: mahadbt-post-pfms
+    portletCategoryName: category.client-extensions
+    type: customElement
+    urls:
+        - js/main.*.js
+    useESM: true

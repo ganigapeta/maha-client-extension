@@ -1,0 +1,17 @@
+{
+  "com.liferay.client.extension.type.configuration.CETConfiguration~mahadbt-post-pfms" : {
+    ":configurator:policy" : "force",
+    "baseURL" : "${portalURL}/o/mahadbt-post-pfms",
+    "buildTimestamp" : 1776792591165,
+    "description" : "",
+    "dxp.lxc.liferay.com.virtualInstanceId" : "default",
+    "name" : "mahadbt-post-pfms",
+    "projectId" : "mahadbtpostpfms",
+    "projectName" : "mahadbt-post-pfms",
+    "properties" : [ ],
+    "sourceCodeURL" : "",
+    "type" : "customElement",
+    "typeSettings" : [ "friendlyURLMapping=mahadbt-post-pfms", "instanceable=false", "urls=js\\main.9597cfa8.js", "useESM=true", "htmlElementName=mahadbt-post-pfms", "cssURLs=css\\main.6df16316.css", "portletCategoryName=category.client-extensions" ],
+    "webContextPath" : "/mahadbt-post-pfms"
+  }
+}
