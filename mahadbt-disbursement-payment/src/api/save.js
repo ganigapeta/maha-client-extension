@@ -1,4 +1,87 @@
 import forge from "node-forge";
+import { getAccessToken } from "./auth";
+
+export async function saveSelectedBeneficiarieAPL(
+  selectedBeneficiaries,
+  apiRes,
+  allocateInputData,
+  userId,
+) {
+  try {
+    console.log(
+      "Save ::::::::::",
+      selectedBeneficiaries,
+      apiRes,
+      allocateInputData,
+      userId,
+    );
+
+        const token = await getAccessToken();
+
+    // Check if bill already exists for this batch
+    const existingCheck = await fetch(
+      `/o/c/billmanagements?filter=billNumber eq '${selectedBeneficiaries[0].batchID}'`,
+      {
+        headers: {
+          Accept: "application/json",
+          "x-csrf-token": window.Liferay?.authToken || "",
+        //  Authorization: `Bearer ${token}`,
+
+        },
+        credentials: "include",
+      },
+    );
+    const existingData = await existingCheck.json();
+    if (existingData?.items?.length > 0) {
+      console.log("Bill already exists for this batch, skipping creation");
+      return existingData.items[0];
+    }
+    //  Main Bill Payload
+    let payload = {
+      billNumber: selectedBeneficiaries[0].batchID,
+      schemeCode:
+        apiRes?.schemeData?.schemeCode ||
+        apiRes?.schemeData?.integrationSchemeCode ||
+        allocateInputData?.schemeCode ||"",
+      ddoCode: apiRes?.ddoRecord?.dDOCode || "",
+      allocatedAmount: allocateInputData?.allocatedAmount || 0,
+      beneficiaryCount: allocateInputData?.noOfBeneficiariesInput || 0,
+      submittedStatus: "Pending",
+      ddoUserId: userId,
+    };
+
+    console.log("Bill Payload:", payload);
+
+    const response = await fetch(`/o/c/billmanagements`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        // "x-csrf-token": window.Liferay?.authToken || "",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+
+
+      },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Bill creation failed: ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log("Bill Created:", result);
+
+    return result;
+  } catch (error) {
+    console.error("Error saving bill:", error);
+
+    return [];
+  }
+}
 
 export async function saveSelectedBeneficiarie(
   selectedBeneficiaries,
@@ -15,6 +98,8 @@ export async function saveSelectedBeneficiarie(
       userId,
     );
 
+        const token = await getAccessToken();
+
     // Check if bill already exists for this batch
     const existingCheck = await fetch(
       `/o/c/billmanagements?filter=billNumber eq '${selectedBeneficiaries[0].batchID}'`,
@@ -22,6 +107,8 @@ export async function saveSelectedBeneficiarie(
         headers: {
           Accept: "application/json",
           "x-csrf-token": window.Liferay?.authToken || "",
+        //  Authorization: `Bearer ${token}`,
+
         },
         credentials: "include",
       },
@@ -52,7 +139,9 @@ export async function saveSelectedBeneficiarie(
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        "x-csrf-token": window.Liferay?.authToken || "",
+        // "x-csrf-token": window.Liferay?.authToken || "",
+                 Authorization: `Bearer ${token}`,
+
       },
       credentials: "include",
       body: JSON.stringify(payload),

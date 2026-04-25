@@ -285,7 +285,7 @@ const BeneficiaryTableDFSO = ({ beneficiaries, searchParams, userRole }) => {
   return (
     <div className="bg-white rounded-lg shadow">
       {/* Header Section with Select All Families and Clear All Buttons */}
-      <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+      <div class="p-4 border-b border-gray-200 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-gray-800">List of Beneficiaries</h2>
           <p className="text-sm text-gray-600 mt-1">
@@ -353,8 +353,8 @@ const BeneficiaryTableDFSO = ({ beneficiaries, searchParams, userRole }) => {
             {paginatedFamilies.map((family, familyIndex) => {
               const isSelected = selectedFamilies.has(family.rc_no);
               const hasValidationError = validationErrors.has(family.rc_no);
-              const totalBenefit = family?.members?.[0]?.amount 
-              //calculateBenefitAmount(family.members);
+              const totalBenefit = //family?.members?.[0]?.amount 
+              calculateBenefitAmount(family.members);
               
               // Check if family has any Aadhaar linked account
               const hasAadhaarLinked = hasFamilyAadhaarLinkedAccount(family);

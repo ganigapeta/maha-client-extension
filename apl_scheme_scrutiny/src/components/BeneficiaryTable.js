@@ -272,7 +272,7 @@ const BeneficiaryTable = ({
       const selectedMemberId = selectedDisbursements[rcNo]?.memberId;
 
       if (family && selectedMemberId) {
-        const totalBenefitAmount = isOldScrutiny ? family?.members?.[0].amount : calculateBenefitAmount(family.members);
+        const totalBenefitAmount = calculateBenefitAmount(family.members);
         
         // Add ALL family members to payload
         family.members.forEach((member) => {
@@ -359,7 +359,7 @@ const BeneficiaryTable = ({
 
   return (
     <div className="bg-white rounded-lg shadow">
-      <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+      <div class="p-4 border-b border-gray-200 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-gray-800">List of Beneficiaries</h2>
           <p className="text-sm text-gray-600 mt-1">
@@ -429,7 +429,7 @@ const BeneficiaryTable = ({
             {paginatedFamilies.map((family, familyIndex) => {
               const isSelected = selectedFamilies.has(family.rc_no);
               const hasValidationError = validationErrors.has(family.rc_no);
-              const totalBenefit = isOldScrutiny? family?.members?.[0].amount : calculateBenefitAmount(family.members);
+              const totalBenefit = calculateBenefitAmount(family.members);
               const isLocked = selectedDisbursements[family.rc_no]?.locked;
 
               // Check if family has any Aadhaar linked account

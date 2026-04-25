@@ -375,6 +375,24 @@ export const apiService = {
   getWIPBeneficiaries: async (params) => {
     try {
       console.log("Fetching WIP data with status SCRUTINY_PENDING");
+
+      // Extract month number from month name
+      const monthMap = {
+        January: 1,
+        February: 2,
+        March: 3,
+        April: 4,
+        May: 5,
+        June: 6,
+        July: 7,
+        August: 8,
+        September: 9,
+        October: 10,
+        November: 11,
+        December: 12,
+      };
+      const mm = monthMap[params.month] || parseInt(params.month);
+
       const response = await api.get("/apl-wip/", {
         params: {
           page: 1,
@@ -383,6 +401,9 @@ export const apiService = {
           sortOrder: "DESC",
           isActive: true,
           wf_status: "SCRUTINY_PENDING",
+          fpsCode: params.fpsCode,
+          fy: params.financialYear, // e.g., '2026-27'
+          mm: mm,
         },
       });
 

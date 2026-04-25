@@ -1,3 +1,10 @@
+
+const buildHeaders = () => ({
+  Accept: "application/json",
+  "Content-Type": "application/json",
+  Authorization: "Basic " + btoa("prabhudasu:root"),
+  // "x-csrf-token": window.Liferay?.authToken || ""
+});
 export async function getPicklistDefinitionByExternalReferenceCode(externalReferenceCode) {
   try {
    
@@ -5,12 +12,8 @@ export async function getPicklistDefinitionByExternalReferenceCode(externalRefer
       `/o/headless-admin-list-type/v1.0/list-type-definitions/by-external-reference-code/${externalReferenceCode}`,
       {
         method: "GET",
-        headers: {
-         "Accept": "application/json",
-          "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "" 
-        },
-         credentials: "include"
+        headers: buildHeaders(),
+        credentials: "include"
       }
     );
 

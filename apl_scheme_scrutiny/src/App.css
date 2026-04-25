@@ -36,3 +36,83 @@
     transform: rotate(360deg);
   }
 }
+:root{
+    --main-gradient:#E57A3B !important;
+    --text-color:#ffffff;
+    --blue-color:#002B70;
+    --grey-color:#ADABAA;
+    --red-color:#E34802;
+}
+.btn,
+.nav-link{
+    border-radius:0 !important;
+    transition:all .2s ease !important;
+}
+.btn[aria-current="page"],
+.nav-link.active{
+    border-bottom:2px solid var(--blue-color) !important;
+    border-top:none !important;
+    border-left:none !important;
+    border-right:none !important;
+    background:transparent !important;
+    color:var(--blue-color) !important;
+    box-shadow:none !important;
+}
+.theme-gradient .btn[aria-current="page"],
+.theme-gradient .nav-link.active{
+    border-bottom:2px solid var(--main-gradient) !important;
+    color:var(--main-gradient) !important;
+}
+.theme-red .btn[aria-current="page"],
+.theme-red .nav-link.active{
+    border-bottom:2px solid var(--red-color) !important;
+    color:var(--red-color) !important;
+}
+.theme-grey .btn[aria-current="page"],
+.theme-grey .nav-link.active{
+    border-bottom:2px solid var(--grey-color) !important;
+    color:var(--grey-color) !important;
+}
+.btn:hover,
+.nav-link:hover{
+    background:transparent !important;
+    box-shadow:none !important;
+}
+
+.btn:focus,
+.nav-link:focus,
+.btn:active,
+.nav-link:active{
+    outline:none !important;
+    box-shadow:none !important;
+}
+.btn .badge,
+.nav-link .badge,
+span.ms-2.badge.rounded-pill{
+    background:#E6F0FF !important;
+    border:none !important;
+    box-shadow:none !important;
+    font-weight:600 !important;
+    padding:.35em .6em !important;
+}
+.btn:not([aria-current="page"]) .badge,
+.nav-link:not(.active) .badge{
+    color:var(--grey-color) !important;
+}
+.btn[aria-current="page"] .badge,
+.nav-link.active .badge{
+    color:var(--blue-color) !important;
+}
+.theme-gradient .btn[aria-current="page"] .badge,
+.theme-gradient .nav-link.active .badge{
+    color:var(--main-gradient) !important;
+}
+
+.theme-red .btn[aria-current="page"] .badge,
+.theme-red .nav-link.active .badge{
+    color:var(--red-color) !important;
+}
+.theme-grey .btn[aria-current="page"] .badge,
+.theme-grey .nav-link.active .badge{
+    color:var(--grey-color) !important;
+}
