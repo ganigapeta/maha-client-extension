@@ -126,7 +126,8 @@ export async function fetchSchemeNameByRole(roleNames) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
+          Authorization: "Basic " + btoa("prabhudasu:root"),
+          // "x-csrf-token": window.Liferay?.authToken || "",
         },
         credentials: "include",
       },
