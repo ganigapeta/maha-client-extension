@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import GenerateBillTable from "./GenerateBillTable"
 import { saveAllocateBeneficiaries } from "../api/save"
+import * as XLSX from 'xlsx';
+import { getObjectName } from '../api/fetch-scheme';
 const AllocationDetailsCard = ({
   checkBalance,
   apiRes,
@@ -11,9 +13,13 @@ const AllocationDetailsCard = ({
   searchData,
   isPensionRole = false,
   hideUpperTable = false,
+  onReset,
 }) => {
   // Calculate allocated amount based on selected beneficiaries
-  const isPensionInstallment = searchData?.installment === "Monthly Benefit";
+const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
+  String(searchData?.installment || '').startsWith('Installment') ||
+  String(searchData?.installment || '').startsWith('Monthly Benefit_') ||
+  searchData?.installment === "One-time Benefit";
   // Calculate allocated amount based on selected beneficiaries
   const calculateAllocatedAmount = (numBeneficiaries) => {
     if (!numBeneficiaries || numBeneficiaries === "") return 0;
@@ -160,10 +166,10 @@ const AllocationDetailsCard = ({
       return;
     }
 
-    if (!allocateInputData.officePaymentNumber) {
-      setValidationMessage({ text: 'Please enter office payment number', type: 'error' });
-      return;
-    }
+    // if (!allocateInputData.officePaymentNumber) {
+    //   setValidationMessage({ text: 'Please enter office payment number', type: 'error' });
+    //   return;
+    // }
 
     const numValue = parseInt(allocateInputData.noOfBeneficiariesInput, 10);
 
@@ -188,9 +194,15 @@ const AllocationDetailsCard = ({
     }
 
 
+    const sortedResults = [...searchResults].sort((a, b) => {
+      const dateA = new Date(a.approvalDate || a.dateCreated || 0);
+      const dateB = new Date(b.approvalDate || b.dateCreated || 0);
+      return dateB - dateA;
+    });
+
     // Select top N beneficiaries
-    const selected = searchResults.slice(0, numValue);
-    const remaining = searchResults.slice(numValue);
+    const selected = sortedResults.slice(0, numValue);
+    const remaining = sortedResults.slice(numValue);
 
     const payload = await saveAllocateBeneficiaries(selected, apiRes, searchData);
     // Calculate allocated amount
@@ -219,8 +231,20 @@ const AllocationDetailsCard = ({
     }));
 
     // Update all states
-    setSelectedBeneficiaries(payload.data);
-    setSearchResults(remaining);
+// Update all states
+// Merge API response with original item data to preserve installment amounts
+const mergedSelected = Array.isArray(payload.data)
+  ? payload.data.map((apiItem, i) => ({
+      ...selected[i],
+      ...apiItem,
+      finalAmount: apiItem?.finalAmount || selected[i]?.installment1 || selected[i]?.installment2 || 0,
+    }))
+  : selected.map(item => ({
+      ...item,
+      finalAmount: item?.installment1 || item?.installment2 || 0,
+    }));
+setSelectedBeneficiaries(mergedSelected);
+setSearchResults(remaining);
 
     setValidationMessage({
       text: `Successfully allocated ${numValue} beneficiaries with amount ₹${calculatedAllocatedAmount}`,
@@ -231,6 +255,59 @@ const AllocationDetailsCard = ({
     setAllocationSuccess(true);
 
     //alert(`Allocated ${numValue} beneficiaries. Payment No: ${allocateInputData.officePaymentNumber}`);
+  };
+
+  const exportToExcel = async () => {
+
+    const isLekLadki = String(apiRes?.schemeData?.schemeCode || '').startsWith('SPA-WCDD-LEKL');
+    const hasInstituteName = backupSearchData.some(item => item.collegeName);
+
+    const isFirstInstallment = searchData?.installment === "1st Installment" || isPensionInstallment;
+
+    const dataToExport = await Promise.all(
+      backupSearchData.map(async (item, index) => {
+        const amount = isFirstInstallment
+          ? parseFloat(item?.installment1) || 0
+          : parseFloat(item?.installment2) || 0;
+
+        const districtName = item.districtName
+          ? item.districtName
+          : isNaN(Number(item.district))
+            ? item.district || ""
+            : await getObjectName("districts", "id", item.district).catch(() => "");
+
+        const appRef = String(item.applicationreferencenumber || "").trim();
+        const refYearCode = appRef.substring(0, 4);
+        const savedFinancialYear = String(item.financialyear || item.academicyear || "").trim();
+        const isRenewal =
+          /^\d{4}$/.test(refYearCode) &&
+            savedFinancialYear.length >= 4 &&
+            refYearCode !== savedFinancialYear.substring(0, 4)
+            ? "Yes"
+            : "No";
+
+        const row = {
+          "S.No": index + 1,
+          "Application ID": item.applicationreferencenumber || "",
+          "Applicant Name": item?.beneficiaryfullnameasinaadhaar || item?.name || item?.farmername || item?.fullname || item?.applicantfullname || `${item?.creator?.givenName || ''} ${item?.creator?.familyName || ''}`.trim(),
+          "District": districtName,
+          "Institute Approval Date": formatDate(item.instituteApprovalDate),
+          "Department Approval Date": formatDate(item.approvalDate),
+          "Amount (₹)": amount,
+          "Status": item.status?.label_i18n || "-"
+        };
+
+        if (hasInstituteName) row["Institute Name"] = item.collegeName || "";
+        if (!isLekLadki) row["Renewal Application"] = isRenewal;
+
+        return row;
+      })
+    );
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Beneficiaries");
+    XLSX.writeFile(wb, `Beneficiary_Allocation_${apiRes?.ddoMaster?.dDOCode || 'List'}_${new Date().getTime()}.xlsx`);
   };
 
   const handleInputChange = (e) => {
@@ -348,6 +425,14 @@ const AllocationDetailsCard = ({
                     <td style={{ width: '16.66%', padding: '10px', backgroundColor: 'white' }}>{allocationData.detailHead}</td>
                   </tr>
 
+                  {/* New Row: Name of Institute | Department Code */}
+                  <tr>
+                    <td className="fw-bold" style={{ padding: '10px', backgroundColor: '#e9ecef' }}>Name of Institute</td>
+                    <td colSpan="3" style={{ padding: '10px', backgroundColor: 'white' }}>{apiRes?.ddoMaster?.dDOName || "NA"}</td>
+                    <td className="fw-bold" style={{ padding: '10px', backgroundColor: '#e9ecef' }}>Department Code</td>
+                    <td style={{ padding: '10px', backgroundColor: 'white' }}>{apiRes?.ddoMaster?.deptCode || "NA"}</td>
+                  </tr>
+
                   {/* Row 2: Current Month Budget | Current Month Expenditure | Current Month Balance */}
                   <tr>
                     <td className="fw-bold" style={{ padding: '10px', backgroundColor: '#e9ecef' }}>Current Month Budget (₹)</td>
@@ -462,6 +547,14 @@ const AllocationDetailsCard = ({
 
           {/* Action buttons */}
           <div className="p-3 d-flex justify-content-end gap-2">
+            <button className="btn btn-outline-success px-4" onClick={exportToExcel}>
+              Export to Excel
+            </button>
+            {onReset && (
+              <button className="btn btn-outline-primary px-4" onClick={onReset}>
+                Reset
+              </button>
+            )}
             <button className="btn btn-primary px-4" onClick={handleAllocate}>
               Allocate Beneficiaries
             </button>

@@ -42,7 +42,8 @@ function BeneficiaryFilter({
   setCheckBalance,
   checkBalance,
   title = "Beneficiary List",
-  hasCoopRole
+  hasCoopRole,
+  hasMapsRole
 }) {
     const [masterData, setMasterData] = useState({});
     const [show,setShow]=useState(false);
@@ -185,7 +186,11 @@ const handleReset = () => {
                     {
                       hasCoopRole ? (<>
                        <option value="1st Installment">One-time Interest Subsidy</option>
-                      </>):(<>
+                      </>):
+                      hasMapsRole ? (<>
+                      <option value="1st Installment">Monthly Reimbursement</option>
+                      </>)
+                      :(<>
                       <option value="1st Installment">1st Installment</option>
                        <option value="2nd Installment">2nd Installment</option>
                       </>)
@@ -232,7 +237,7 @@ const handleReset = () => {
         {/* Results Section */}
         {show && (
           <>
-            <BeneficiaryTable searchResults={searchResults} searchData={searchData} setShowLoader={setShowLoader} hasCoopRole={hasCoopRole}/>
+            <BeneficiaryTable searchResults={searchResults} searchData={searchData} setShowLoader={setShowLoader} hasCoopRole={hasCoopRole} hasMapsRole={hasMapsRole}/>
             <BeneficiaryDetails 
               searchResults={searchResults} 
               apiRes={apiRes} 
@@ -243,6 +248,7 @@ const handleReset = () => {
               setSearchResults={setSearchResults} 
               setBackupSearchData={setBackupSearchData} 
               backupSearchData={backupSearchData}
+              onReset={handleReset}
             />
           </>
         )}

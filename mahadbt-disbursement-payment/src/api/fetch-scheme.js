@@ -1,5 +1,4 @@
-
-export async function fetchSchemeName(userId,setApiRes) {
+export async function fetchSchemeName(userId, setApiRes) {
   try {
     const response = await fetch(
       `/o/c/ddomasters/?filter=dDOUserID eq ${Number(userId)}`,
@@ -8,10 +7,10 @@ export async function fetchSchemeName(userId,setApiRes) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || ""
+          "x-csrf-token": window.Liferay?.authToken || "",
         },
-        credentials: "include"
-      }
+        credentials: "include",
+      },
     );
 
     if (!response.ok) {
@@ -25,21 +24,20 @@ export async function fetchSchemeName(userId,setApiRes) {
     }
 
     const ddoMappingId = data?.items[0]?.id || [];
+    const ddoMaster = data?.items[0] || {};
+
+    setApiRes((prev) => ({
+      ...prev,
+      ddoMaster: ddoMaster,
+    }));
 
     const schemeMappings = await fetchSchemeNameDDOMapping(ddoMappingId);
-      //  setApiRes(prev=>({
-      // ...prev,
-      // ddoRecord: schemeMappings
-      //   }));
     return schemeMappings;
-
   } catch (err) {
     console.error("Error fetching scheme names:", err);
     return [];
   }
 }
-
-
 
 export async function fetchSchemeNameDDOMapping(ddoMappingId) {
   try {
@@ -50,10 +48,10 @@ export async function fetchSchemeNameDDOMapping(ddoMappingId) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || ""
+          "x-csrf-token": window.Liferay?.authToken || "",
         },
-        credentials: "include"
-      }
+        credentials: "include",
+      },
     );
 
     if (!response.ok) {
@@ -63,13 +61,11 @@ export async function fetchSchemeNameDDOMapping(ddoMappingId) {
     const data = await response.json();
 
     return data?.items || [];
-
   } catch (err) {
     console.error("Error fetching scheme mappings:", err);
     return [];
   }
 }
-
 
 export async function getObjectName(objectName, field = "id", value) {
   try {
@@ -82,13 +78,15 @@ export async function getObjectName(objectName, field = "id", value) {
       method: "GET",
       headers: {
         Authorization: "Basic " + btoa("soham:Test"),
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
       let err = {};
-      try { err = await response.json(); } catch (e) {}
+      try {
+        err = await response.json();
+      } catch (e) {}
       console.error("API Error:", err);
       throw new Error(err.title || "Failed to fetch data");
     }
@@ -96,24 +94,27 @@ export async function getObjectName(objectName, field = "id", value) {
     const data = await response.json();
 
     return data.items?.length ? data.items[0].name : null;
-
   } catch (error) {
     console.error("getObjectByFilter Error:", error);
     return null;
   }
 }
 
-
 export async function fetchSchemeNameByRole(roleNames) {
   try {
-    const SNO_ROLES = ["pension sno", "assistance sno", "stipend sno", "pre matric sno"];
-    const isSnoRole = window.Liferay?.ThemeDisplay?.getUserRoles?.()
-  ?.some(role => SNO_ROLES.includes(role?.toLowerCase())) || false;
+    const SNO_ROLES = [
+      "pension sno",
+      "assistance sno",
+      "stipend sno",
+      "pre matric sno",
+    ];
+    const isSnoRole =
+      window.Liferay?.ThemeDisplay?.getUserRoles?.()?.some((role) =>
+        SNO_ROLES.includes(role?.toLowerCase()),
+      ) || false;
 
-    const matchedRole = roleNames.find(name =>
-      SNO_ROLES.some(sno =>
-        String(name).trim().toLowerCase().includes(sno)
-      )
+    const matchedRole = roleNames.find((name) =>
+      SNO_ROLES.some((sno) => String(name).trim().toLowerCase().includes(sno)),
     );
 
     if (!matchedRole) return [];
@@ -125,13 +126,14 @@ export async function fetchSchemeNameByRole(roleNames) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || ""
+          "x-csrf-token": window.Liferay?.authToken || "",
         },
-        credentials: "include"
-      }
+        credentials: "include",
+      },
     );
 
-    if (!roleRes.ok) throw new Error(`Failed to fetch role mapping: ${roleRes.status}`);
+    if (!roleRes.ok)
+      throw new Error(`Failed to fetch role mapping: ${roleRes.status}`);
 
     const roleData = await roleRes.json();
     const roleMapping = roleData?.items?.[0];
@@ -147,26 +149,58 @@ export async function fetchSchemeNameByRole(roleNames) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || ""
+          "x-csrf-token": window.Liferay?.authToken || "",
         },
-        credentials: "include"
-      }
+        credentials: "include",
+      },
     );
 
-    if (!schemesRes.ok) throw new Error(`Failed to fetch schemes: ${schemesRes.status}`);
+    if (!schemesRes.ok)
+      throw new Error(`Failed to fetch schemes: ${schemesRes.status}`);
 
     const schemesData = await schemesRes.json();
     const schemes = schemesData?.items || [];
 
     // Return in same shape as ddoschememappings so dropdown works identically
-    return schemes.map(scheme => ({
+    return schemes.map((scheme) => ({
       id: scheme.id,
       name: scheme.schemeName,
-      r_schemeMapping_c_schemeConfiguratorId: scheme.id
+      schemeCode: scheme.schemeCode,
+      benefitsJsonData:
+        scheme.benefitsJsonData || scheme.benefitsjsondata || "",
+      r_schemeMapping_c_schemeConfiguratorId: scheme.id,
     }));
-
   } catch (err) {
     console.error("Error fetching role scheme mappings:", err);
     return [];
+  }
+}
+
+
+export async function getObjectDetail(objectName, field = "id", value) {
+  try {
+    if (!objectName) throw new Error("Object name is required");
+    if (!value) throw new Error("Filter value is required");
+
+    const url = `/o/c/${objectName}/?filter=${field} eq '${value}'`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: "Basic " + btoa("soham:Test"),
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+
+    return data.items?.length ? data.items[0] : null;
+  } catch (error) {
+    console.error("getObjectDetail Error:", error);
+    return null;
   }
 }

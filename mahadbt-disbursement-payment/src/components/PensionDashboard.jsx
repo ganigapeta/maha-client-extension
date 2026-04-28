@@ -44,8 +44,9 @@ function PensionDashboard({
   const [show, setShow] = useState(false);
   const [backupSearchData, setBackupSearchData] = useState([]);
   const [showLoader, setShowLoader] = useState(false);
+  const [lekLadkiInstallments, setLekLadkiInstallments] = useState([]);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
     resolver: yupResolver(beneficiaryFilterValidationSchema),
     defaultValues: {
       schemeName: '',
@@ -54,6 +55,40 @@ function PensionDashboard({
       action: ''
     }
   });
+
+  const selectedSchemeName = watch('schemeName');
+  const selectedFinancialYear = watch('financialYear');
+  console.log('selectedFinancialYear:::', selectedFinancialYear);
+
+
+  const selectedSchemeObj = masterData.schemes?.find(
+    s => (s.id + '_' + s.r_schemeMapping_c_schemeConfiguratorId) === selectedSchemeName
+  );
+  const isLekLadki = selectedSchemeObj?.schemeCode?.startsWith('SPA-WCDD-LEKL');
+  const isOneTimeScheme = selectedSchemeObj?.schemeCode?.startsWith('SPA-SJSA-MVYS');
+
+  const MONTHS = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const getMonthOptions = (financialYear) => {
+    const fy = (financialYear || '').trim();
+    let startYear, endYear;
+    if (fy.includes('-')) {
+      [startYear, endYear] = fy.split('-').map(Number);
+    } else if (fy.length === 4) {
+      // e.g. "2526" means 2025-2026
+      startYear = parseInt('20' + fy.substring(0, 2), 10);
+      endYear = parseInt('20' + fy.substring(2, 4), 10);
+    }
+    if (!startYear || !endYear) return [];
+    return MONTHS.map((month) => {
+      const year = ['January', 'February', 'March'].includes(month) ? endYear : startYear;
+      return { label: month, value: `Monthly Benefit_${month}_${year}` };
+
+    });
+  };
 
   useEffect(() => {
     if (!loginUserId || !roles) return;
@@ -74,6 +109,39 @@ function PensionDashboard({
     fetchPicklist();
   }, []);
 
+  useEffect(() => {
+    if (!isLekLadki) {
+      setLekLadkiInstallments([]);
+      return;
+    }
+    const fetchInstallments = async () => {
+      try {
+        const res = await fetch(
+          `/o/c/citizendashboardkpis?filter=schemeCode eq 'SPA-WCDD-LEKL-2-26-001'&pageSize=1&sort=dateCreated:desc`,
+          {
+            headers: {
+              Accept: "application/json",
+              "x-csrf-token": window.Liferay?.authToken || ""
+            },
+            credentials: "include"
+          }
+        );
+        const data = await res.json();
+        const benefitsRaw = data?.items?.[0]?.benefitsJsonData || "";
+        const benefits = typeof benefitsRaw === "string" ? JSON.parse(benefitsRaw) : benefitsRaw;
+        const installments = benefits?.installments || {};
+        const sorted = Object.keys(installments)
+          .sort()
+          .map(k => ({ key: k, amount: installments[k] }));
+        setLekLadkiInstallments(sorted);
+      } catch (e) {
+        console.error("Failed to fetch Lek Ladki installments", e);
+        setLekLadkiInstallments([]);
+      }
+    };
+    fetchInstallments();
+  }, [isLekLadki]);
+
   const onSubmit = async (data) => {
     setShowLoader(true);
 
@@ -91,14 +159,14 @@ function PensionDashboard({
     }
   };
 
-const handleReset = () => {
-  reset();
-  setShow(false);
-  setSearchResults([]);
-  setBackupSearchData([]);
-  setSearchData([]);
-  setCheckBalance({});
-};
+  const handleReset = () => {
+    reset();
+    setShow(false);
+    setSearchResults([]);
+    setBackupSearchData([]);
+    setSearchData([]);
+    setCheckBalance({});
+  };
 
   console.log('Master Data in Pension Dashboard::::', masterData, roles);
   const SNO_ROLES = ["pension sno", "assistance sno", "stipend sno", "pre matric sno"];
@@ -166,9 +234,19 @@ const handleReset = () => {
                   {...register('installment')}
                 >
                   <option value="">Select</option>
-                  {isSnoRole ? (
-                    <option value="Monthly Benefit">Monthly Benefit</option>
-                  ) : (
+                  {isSnoRole && isLekLadki ? (
+                    lekLadkiInstallments.map((inst) => (
+                      <option key={inst.key} value={inst.key}>
+                        {inst.key}
+                      </option>
+                    ))
+) : isSnoRole && isOneTimeScheme ? (
+  <option value="One-time Benefit">One-time Benefit</option>
+) : isSnoRole ? (
+  getMonthOptions(selectedFinancialYear).map(({ label, value }) => (
+    <option key={value} value={value}>{label}</option>
+  ))
+) : (
                     <>
                       <option value="1st Installment">1st Installment</option>
                       <option value="2nd Installment">2nd Installment</option>
@@ -224,6 +302,7 @@ const handleReset = () => {
             setSearchResults={setSearchResults}
             setBackupSearchData={setBackupSearchData}
             backupSearchData={backupSearchData}
+            onReset={handleReset}
           />
         </>
       )}

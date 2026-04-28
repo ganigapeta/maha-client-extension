@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getObjectName } from '../api/fetch-scheme';
+import { getObjectName, getObjectDetail } from '../api/fetch-scheme';
 import { getPicklistDefinitionByExternalReferenceCode } from '../api/fetch-picklist';
 import { checkBalanceApi, getDDORecordUsingId } from '../api/beneficiary-list';
 import AllocateBeneficiaries from './AllocateBeneficiaries';
@@ -18,7 +18,9 @@ const BeneficiaryTable = ({
   setSearchResults,
   setBackupSearchData,
   backupSearchData,
-  hasCoopRole
+  onReset,
+  hasCoopRole,
+  hasMapsRole
 }) => {
   // console.log("Data received in BeneficiaryTable searchData:", searchData);
   // console.log("First item fields:", Object.keys(searchResults?.[0] || {}));
@@ -37,60 +39,42 @@ const BeneficiaryTable = ({
   }
 
   // Calculate total beneficiary amount
-const totalBeneficiaryAmount = safeData.reduce((total, item) => {
-  return total + (parseFloat(item?.installment1) || 0) + (parseFloat(item?.installment2) || 0);
-}, 0);
+  const totalBeneficiaryAmount = safeData.reduce((total, item) => {
+    return total + (parseFloat(item?.installment1) || 0) + (parseFloat(item?.installment2) || 0);
+  }, 0);
 
   // Fetch college and district names for each item
   useEffect(() => {
     const enrichData = async () => {
       const enriched = await Promise.all(
         safeData.map(async (item) => {
+          const college = await getObjectDetail("colleges", "id", item.collegenameschoolname);
+
           const collegeName = await getObjectName("colleges", "id", item.collegenameschoolname);
+          // const collegeName = college?.name || null;
+          const departmentCode = college?.departmentCode || college?.aisheCode || college?.code || null;
+          // console.log("collegecode ::: ", collegecode);
+          //const departmentCode = await.getObjectName("colleges", "id", item.collegenameschoolname);
+
+
           const districtName = isNaN(Number(item.district))
             ? item.district
             : await getObjectName("districts", "id", item.district);
 
-          // Check renewal — same applicationreferencenumber in different financial year
-          let isRenewal = "No";
-          try {
-            const appRef = item.applicationreferencenumber || "";
-            const currentFY = item.financialyear || item.academicyear || "";
-            const loginUserId = item.loginuserid || 0;
-            const schemeCode = item.kpiData?.schemeCode || "";
-
-            if (loginUserId && schemeCode && currentFY) {
-              const res = await fetch(
-                `/o/c/citizendashboardkpis?filter=loginUserId eq ${loginUserId} and schemeCode eq '${schemeCode}'&pageSize=200`,
-                {
-                  headers: {
-                    "Accept": "application/json",
-                    "x-csrf-token": window.Liferay?.authToken || ""
-                  },
-                  credentials: "include"
-                }
-              );
-              const data = await res.json();
-              const allEntries = data?.items || [];
-
-              // Get all unique applicationrefencenumbers for this student+scheme
-              // Check if any entry has a different year prefix in applicationrefencenumber
-              const currentYearPrefix = appRef.substring(0, 4); // e.g. "2526"
-              const hasDifferentYear = allEntries.some(entry => {
-                const entryRef = entry.applicationrefencenumber || "";
-                const entryYearPrefix = entryRef.substring(0, 4);
-                return entryYearPrefix && entryYearPrefix !== currentYearPrefix;
-              });
-
-              isRenewal = hasDifferentYear ? "Yes" : "No";
-            }
-          } catch (e) {
-            console.error("Error checking renewal:", e);
-          }
+          const appRef = String(item.applicationreferencenumber || "").trim();
+          const refYearCode = appRef.substring(0, 4);
+          const savedFinancialYear = String(item.financialyear || item.academicyear || "").trim();
+          const isRenewal =
+            /^\d{4}$/.test(refYearCode) &&
+              savedFinancialYear.length >= 4 &&
+              refYearCode !== savedFinancialYear.substring(0, 4)
+              ? "Yes"
+              : "No";
 
           return {
             ...item,
             collegeName,
+            departmentCode,
             districtName,
             isRenewal
           };
@@ -150,7 +134,7 @@ const totalBeneficiaryAmount = safeData.reduce((total, item) => {
     }
   }
 
-  console.log("Enriched Data:", enrichedData,"serachResults::::", enrichedData[0]);
+  console.log("Enriched Data:", enrichedData, "serachResults::::", enrichedData[0]);
 
   return (
     <>
@@ -183,26 +167,34 @@ const totalBeneficiaryAmount = safeData.reduce((total, item) => {
               <th>Application ID</th>
               <th>Application Date</th>
               <th>Applicant Name</th>
-              {!isSnoRole && !hasCoopRole && <th>Institute Name</th>}
-              <th>District</th>
+              {!isSnoRole && !hasCoopRole && !hasMapsRole && <th>Institute Name</th>}
+              {!isSnoRole && !hasCoopRole && !hasMapsRole && <th>Department Code</th>}
+              {!hasMapsRole && <th>District</th>}
+
               {/* <th>{searchData?.installment === "1st Installment" ? "1st Installment" : searchData?.installment === "2nd Installment" ? "2nd Installment" : "Installment"}</th> */}
               <th>Renewal Application</th>
-              <th>Approval Date</th>
+              {!isSnoRole && !hasCoopRole && !hasMapsRole && <th>Approval Date</th>}
+              {!isSnoRole && !hasCoopRole && !hasMapsRole && <th>Institute/Department Approval Date</th>}
               <th>Application Status</th>
-              {isSnoRole ? (
-                <th>Monthly Benefit (₹)</th>
-              ):
-               hasCoopRole?(
-                <>
-                <th>One-time Interest Subsidy (₹)</th>
-                </>
-               )
-               : (
-                <>
-                  <th>1st Installment (₹)</th>
-                  <th>2nd Installment (₹)</th>
-                </>
-              )}
+              {isSnoRole && String(searchData?.installment || '').startsWith('Installment') ? (
+                <th>Installment Amount (₹)</th>
+              ) : isSnoRole ? (
+                <th>{searchData?.installment === "One-time Benefit" ? "One-time Benefit (₹)" : "Monthly Benefit (₹)"}</th>
+              ) :
+                hasCoopRole ? (
+                  <>
+                    <th>One-time Interest Subsidy (₹)</th>
+                  </>
+                ) :
+                  hasMapsRole ? (<>
+                    <th>Monthly Reimbursement (₹)</th>
+                  </>)
+                    : (
+                      <>
+                        <th>1st Installment (₹)</th>
+                        <th>2nd Installment (₹)</th>
+                      </>
+                    )}
               <th>Total Amount Payable (₹)</th>
             </tr>
           </thead>
@@ -213,11 +205,13 @@ const totalBeneficiaryAmount = safeData.reduce((total, item) => {
                   <tr key={index}>
                     <td>{indexOfFirstEntry + index + 1}</td>
                     <td>{item.applicationreferencenumber}</td>
-                    <td>{formatDate(item.dateModified)}</td>
+                    <td>{formatDate(item.dateCreated)}</td>
                     <td>
-                      {item?.name || item?.farmername || item?.fullname || item?.applicantfullname || `${item?.creator?.givenName || ''} ${item?.creator?.familyName || ''}`.trim() || 'N/A'}                    </td>
-                    {!isSnoRole && !hasCoopRole && <td>{item.collegeName}</td>}
-                    <td>{item.districtName}</td>
+                      {item?.beneficiaryfullnameasinaadhaar || item?.name || item?.farmername || item?.fullname || item?.applicantfullname || `${item?.creator?.givenName || ''} ${item?.creator?.familyName || ''}`.trim() || 'N/A'}</td>
+                    {!isSnoRole && !hasCoopRole && !hasMapsRole && <td>{item.collegeName}</td>}
+                    {!isSnoRole && !hasCoopRole && !hasMapsRole && <td>{item.departmentCode}</td>}
+                    {!hasMapsRole && <td>{item.districtName}</td>}
+
                     {/* <td className="text-end">
                       ₹{(searchData?.installment === "1st Installment"
                         ? (item?.installment1 ?? 0)
@@ -227,31 +221,36 @@ const totalBeneficiaryAmount = safeData.reduce((total, item) => {
                       ).toLocaleString("en-IN")}
                     </td> */}
                     <td>{item.isRenewal || "No"}</td>
-                    <td>{formatDate(item.dateModified)}</td>
+                    {!isSnoRole && !hasCoopRole && !hasMapsRole && <td>{formatDate(item.approvalDate)}</td>}
+                    {!isSnoRole && !hasCoopRole && !hasMapsRole && <td>{formatDate(item.instituteApprovalDate)}</td>}
                     <td>{item.status?.label_i18n || "-"}</td>
                     {isPensionRole ? (
-                  <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
-                ) : 
-                  hasCoopRole? (
-                    <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
-                  ):
-                (
-                  <>
-                    <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
-                    <td className="text-end">₹{(item?.installment2 ?? 0).toLocaleString("en-IN")}</td>
-                  </>
-                )}
-                <td className="text-end">₹{((item?.installment1 ?? 0) + (item?.installment2 ?? 0)).toLocaleString("en-IN")}</td>
+                      <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
+                    ) :
+                      hasCoopRole ? (
+                        <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
+                      ) :
+                        hasMapsRole ? (<>
+                          <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
+                        </>)
+                          :
+                          (
+                            <>
+                              <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
+                              <td className="text-end">₹{(item?.installment2 ?? 0).toLocaleString("en-IN")}</td>
+                            </>
+                          )}
+                    <td className="text-end">₹{((item?.installment1 ?? 0) + (item?.installment2 ?? 0)).toLocaleString("en-IN")}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={isSnoRole || hasCoopRole ? "9" : "10"} className="text-center">No data for current page</td>
+                  <td colSpan={isSnoRole || hasCoopRole ? "9" : hasMapsRole ? "8" : "14"} className="text-center">No data for current page</td>
                 </tr>
               )
             ) : (
               <tr>
-                <td colSpan={isSnoRole || hasCoopRole ? "9" : "11"} className="text-center">No data available</td>
+                <td colSpan={isSnoRole || hasCoopRole ? "9" : hasMapsRole ? "8" : "14"} className="text-center">No data available</td>
               </tr>
             )}
           </tbody>
@@ -259,8 +258,8 @@ const totalBeneficiaryAmount = safeData.reduce((total, item) => {
           {enrichedData.length > 0 && (
             <tfoot className="table-secondary">
               <tr>
-                <td colSpan={isSnoRole || hasCoopRole ? "9" : "11"} className="text-end fw-bold">Total Beneficiary Amount:</td>
-                <td className="text-end fw-bold">₹{totalBeneficiaryAmount.toFixed(2)}</td>
+                <td colSpan={isSnoRole || hasCoopRole ? "8" : hasMapsRole ? "7" : "13"} className="text-end fw-bold">Total Beneficiary Amount:</td>
+                <td className="text-end fw-bold">₹{totalBeneficiaryAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               </tr>
             </tfoot>
           )}
@@ -281,7 +280,7 @@ const totalBeneficiaryAmount = safeData.reduce((total, item) => {
 
       {enablePensionActions && showAllocateBeneficiaries && (
         <AllocateBeneficiaries
-          checkBalance={checkBalance?.data}
+          checkBalance={checkBalance?.data || checkBalance}
           apiRes={apiRes}
           searchResults={searchResults}
           setSearchResults={setSearchResults}
@@ -290,6 +289,7 @@ const totalBeneficiaryAmount = safeData.reduce((total, item) => {
           searchData={searchData}
           isPensionRole={isPensionRole}
           hideUpperTable={enablePensionActions}
+          onReset={onReset}
         />
       )}
 

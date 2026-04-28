@@ -74,14 +74,25 @@ const BillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateInput
 
         const pendingBill = await getBills(userId);
 
-        const mappedData = pendingBill.map(item => ({
-          ...item,
-          beneficiaryAllocatedCount: Number(item.beneficiaryCount || 0),
-          submittedBillStatus: item.submittedStatus,
-          paymentAuthorizationLetter: item.paymentAuthLetter,
-          mtr: item.mtrFile,
-          beneficiaryListExport: item.beneficiaryExport,
-          beams: item.beamsStatus
+        const mappedData = await Promise.all(pendingBill.map(async (item) => {
+          let allocatedAmount = Number(item.allocatedAmount) || 0;
+          // If allocatedAmount is 0, recompute from allotment records
+          if (allocatedAmount === 0 && item.billNumber && apiRes?.schemeData) {
+            try {
+              const allotments = await getDataBaseOnBillNumber(item.billNumber, apiRes.schemeData);
+              allocatedAmount = allotments.reduce((sum, a) => sum + (Number(a.finalAmount) || 0), 0);
+            } catch (e) { }
+          }
+          return {
+            ...item,
+            allocatedAmount,
+            beneficiaryAllocatedCount: Number(item.beneficiaryCount || 0),
+            submittedBillStatus: item.submittedStatus,
+            paymentAuthorizationLetter: item.paymentAuthLetter,
+            mtr: item.mtrFile,
+            beneficiaryListExport: item.beneficiaryExport,
+            beams: item.beamsStatus
+          };
         }));
 
         setResponseData(mappedData);
@@ -409,7 +420,7 @@ const BillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateInput
                     margin: [0, 10, 0, 2],
                   },
                   {
-                    text: "मकोनि - 44",
+                    text: "मकोनि - 45",
                     bold: true,
                     fontSize: 14,
                     alignment: "center",
@@ -1057,8 +1068,7 @@ const BillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateInput
               },
               {
                 columns: [
-                  { width: "*", text: "Scheme Name: " + " Financial Year: " + billData.financialYear, fontSize: 11, bold: true, font: "Roboto", margin: [28, 0, 28, 10] },
-                ],
+                  { width: "*", text: "Scheme Name: " + (billData.schemeName || "") + "  Financial Year: " + billData.financialYear, fontSize: 11, bold: true, font: "Roboto", margin: [28, 0, 28, 10] },],
               },
 
               {
@@ -1399,7 +1409,7 @@ const BillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateInput
 
           const enrichedRowData = {
             ...rowData,
-            schemeName: ddoMapping.name || rowData.schemeCode,
+            schemeName: ddoMapping.name || apiRes?.schemeData?.schemeName || rowData.schemeCode,
             beamsPdfData: JSON.stringify(enrichedBeamsData),
             financialYear: financialYear
           };

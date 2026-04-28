@@ -1,188 +1,4 @@
 import forge from "node-forge";
-import { getAccessToken } from "./auth";
-
-export async function saveSelectedBeneficiarieAPL(
-  selectedBeneficiaries,
-  apiRes,
-  allocateInputData,
-  userId,
-) {
-  try {
-    console.log(
-      "Save ::::::::::",
-      selectedBeneficiaries,
-      apiRes,
-      allocateInputData,
-      userId,
-    );
-
-        const token = await getAccessToken();
-
-    // Check if bill already exists for this batch
-    const existingCheck = await fetch(
-      `/o/c/billmanagements?filter=billNumber eq '${selectedBeneficiaries[0].batchID}'`,
-      {
-        headers: {
-          Accept: "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
-        //  Authorization: `Bearer ${token}`,
-
-        },
-        credentials: "include",
-      },
-    );
-    const existingData = await existingCheck.json();
-    if (existingData?.items?.length > 0) {
-      console.log("Bill already exists for this batch, skipping creation");
-      return existingData.items[0];
-    }
-    //  Main Bill Payload
-    let payload = {
-      billNumber: selectedBeneficiaries[0].batchID,
-      schemeCode:
-        apiRes?.schemeData?.schemeCode ||
-        apiRes?.schemeData?.integrationSchemeCode ||
-        allocateInputData?.schemeCode ||"",
-      ddoCode: apiRes?.ddoRecord?.dDOCode || "",
-      allocatedAmount: allocateInputData?.allocatedAmount || 0,
-      beneficiaryCount: allocateInputData?.noOfBeneficiariesInput || 0,
-      submittedStatus: "Pending",
-      ddoUserId: userId,
-    };
-
-    console.log("Bill Payload:", payload);
-
-    const response = await fetch(`/o/c/billmanagements`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        // "x-csrf-token": window.Liferay?.authToken || "",
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-
-
-      },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Bill creation failed: ${errorText}`);
-    }
-
-    const result = await response.json();
-    console.log("Bill Created:", result);
-
-    return result;
-  } catch (error) {
-    console.error("Error saving bill:", error);
-
-    return [];
-  }
-}
-
-export async function saveSelectedBeneficiarieAPLMock(
-  selectedBeneficiaries,
-  apiRes,
-  allocateInputData,
-  userId,
-) {
-
-  const res = {
-  "actions": {
-    "updateBatch": {
-      "method": "PUT",
-      "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/batch"
-    },
-    "create": {
-      "method": "POST",
-      "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/"
-    },
-    "createBatch": {
-      "method": "POST",
-      "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/batch"
-    },
-    "deleteBatch": {
-      "method": "DELETE",
-      "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/batch"
-    }
-  },
-  "facets": [],
-  "items": [
-    {
-      "actions": {
-        "permissions": {
-          "method": "GET",
-          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663/permissions"
-        },
-        "get": {
-          "method": "GET",
-          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663"
-        },
-        "replace": {
-          "method": "PUT",
-          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663"
-        },
-        "update": {
-          "method": "PATCH",
-          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663"
-        },
-        "delete": {
-          "method": "DELETE",
-          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663"
-        }
-      },
-      "creator": {
-        "additionalName": "",
-        "contentType": "UserAccount",
-        "externalReferenceCode": "dc265952-2d22-3a98-e120-10d9011e228e",
-        "familyName": "sno",
-        "givenName": "pension",
-        "id": 5486540,
-        "name": "pension sno"
-      },
-      "dateCreated": "2026-04-13T18:17:06Z",
-      "dateModified": "2026-04-13T18:17:06Z",
-      "externalReferenceCode": "7b532413-ed22-cdbf-9501-28ff45086f44",
-      "id": 5486663,
-      "keywords": [],
-      "status": {
-        "code": 0,
-        "label": "approved",
-        "label_i18n": "Approved"
-      },
-      "taxonomyCategoryBriefs": [],
-      "beamsPdfId": "",
-      "beneficiaryCount": "1",
-      "paymentAuthLetter": "",
-      "coveringLetter": "",
-      "ddoUserId": "5486540",
-      "schemeCode": "PEN-SJSA-SGNY-2-26-023",
-      "userData": "",
-      "submittedStatus": "Pending",
-      "beamsStatus": "",
-      "mtrFile": "",
-      "beneficiaryExport": "",
-      "cancelBill": "",
-      "ddoCode": "",
-      "allocatedAmount": "0.00",
-      "beamsPdfUrl": "",
-      "beamsPdfData": "",
-      "billStatus": "",
-      "billNumber": "184219510",
-      "officePaymentNumber": ""
-    }
-  ],
-  "lastPage": 1,
-  "page": 1,
-  "pageSize": 200,
-  "totalCount": 1
-};
-  return res.items[0];
-  
-}
 
 export async function saveSelectedBeneficiarie(
   selectedBeneficiaries,
@@ -199,8 +15,6 @@ export async function saveSelectedBeneficiarie(
       userId,
     );
 
-        const token = await getAccessToken();
-
     // Check if bill already exists for this batch
     const existingCheck = await fetch(
       `/o/c/billmanagements?filter=billNumber eq '${selectedBeneficiaries[0].batchID}'`,
@@ -208,8 +22,6 @@ export async function saveSelectedBeneficiarie(
         headers: {
           Accept: "application/json",
           "x-csrf-token": window.Liferay?.authToken || "",
-        //  Authorization: `Bearer ${token}`,
-
         },
         credentials: "include",
       },
@@ -220,13 +32,34 @@ export async function saveSelectedBeneficiarie(
       return existingData.items[0];
     }
     //  Main Bill Payload
+    // Fetch DDO scheme mapping to get ddoCode if not in apiRes
+    let ddoCodeValue = apiRes?.ddoRecord?.dDOCode || "";
+    if (!ddoCodeValue && apiRes?.schemeData?.id) {
+      try {
+        const ddoMappingRes = await fetch(
+          `/o/c/ddoschememappings?filter=r_schemeMapping_c_schemeConfiguratorId eq '${apiRes.schemeData.id}'`,
+          {
+            headers: {
+              Accept: "application/json",
+              "x-csrf-token": window.Liferay?.authToken || "",
+            },
+            credentials: "include",
+          },
+        );
+        const ddoMappingData = await ddoMappingRes.json();
+        ddoCodeValue = ddoMappingData?.items?.[0]?.dDOCode || "";
+      } catch (e) {
+        console.error("Failed to fetch DDO mapping:", e);
+      }
+    }
+
     let payload = {
       billNumber: selectedBeneficiaries[0].batchID,
       schemeCode:
         apiRes?.schemeData?.schemeCode ||
         apiRes?.schemeData?.integrationSchemeCode ||
         "",
-      ddoCode: apiRes?.ddoRecord?.dDOCode || "",
+      ddoCode: ddoCodeValue,
       allocatedAmount: allocateInputData?.allocatedAmount || 0,
       beneficiaryCount: allocateInputData?.noOfBeneficiariesInput || 0,
       submittedStatus: "Pending",
@@ -240,9 +73,7 @@ export async function saveSelectedBeneficiarie(
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        // "x-csrf-token": window.Liferay?.authToken || "",
-                 Authorization: `Bearer ${token}`,
-
+        "x-csrf-token": window.Liferay?.authToken || "",
       },
       credentials: "include",
       body: JSON.stringify(payload),
@@ -332,17 +163,33 @@ export async function saveAllocateBeneficiaries(
 
     console.log("searchData in saveAllocateBeneficiaries::::::::", searchData);
     const payload = selectedBeneficiaries.map((item) => {
-      const totalValue =
-        searchData?.installment === "1st Installment" ||
-        searchData?.installment === "Monthly Benefit"
+      const isLekLadkiInstallment = String(
+        searchData?.installment || "",
+      ).startsWith("Installment");
+
+      const totalValue = isLekLadkiInstallment
+        ? item?.installment1
+        : searchData?.installment === "1st Installment" ||
+            searchData?.installment === "Monthly Benefit" ||
+            String(searchData?.installment || "").startsWith(
+              "Monthly Benefit_",
+            ) ||
+            searchData?.installment === "One-time Benefit"
           ? item?.installment1
           : item?.installment2;
 
-      let installmentStatus =
-        searchData?.installment === "1st Installment" ? 1 : 2;
+      let installmentStatus = isLekLadkiInstallment
+        ? parseInt(
+            searchData.installment.replace("Installment ", "").trim(),
+            10,
+          ) || 1
+        : searchData?.installment === "1st Installment"
+          ? 1
+          : 2;
       console.log("installmentStatus::::::::", installmentStatus);
       return {
         applicantName:
+          item?.beneficiaryfullnameasinaadhaar ||
           item?.name ||
           item?.farmername ||
           item?.fullname ||
@@ -486,8 +333,49 @@ export async function getDataBaseOnBillNumber(billNumber, schemeData) {
 
     console.log("Filtered Data:", data);
 
+    const items = data?.items || [];
+
+    // Enrich items: if finalAmount is 0, fetch correct amount from KPI benefitsJsonData
+    const enriched = await Promise.all(
+      items.map(async (item) => {
+        if (Number(item.finalAmount) !== 0) return item;
+        try {
+          const kpiRes = await fetch(
+            `/o/c/citizendashboardkpis?filter=applicationrefencenumber eq '${item.applicationNo || ""}'`,
+            {
+              headers: {
+                Accept: "application/json",
+                "x-csrf-token": window.Liferay?.authToken || "",
+              },
+              credentials: "include",
+            },
+          );
+          const kpiData = await kpiRes.json();
+          const kpi = kpiData?.items?.[0];
+          if (!kpi?.benefitsJsonData) return item;
+          const benefits = JSON.parse(kpi.benefitsJsonData);
+          const installments = benefits?.installments || {};
+          const additionalBenefits = benefits?.additionalBenefits || {};
+          let amount = Object.values(installments).reduce(
+            (s, v) => s + (Number(v) || 0),
+            0,
+          );
+          if (amount === 0) {
+            amount = Object.values(additionalBenefits).reduce(
+              (s, v) => s + (Number(v) || 0),
+              0,
+            );
+          }
+          if (amount === 0) amount = Number(benefits?.totalAmount) || 0;
+          return { ...item, finalAmount: amount };
+        } catch (e) {
+          return item;
+        }
+      }),
+    );
+
     // return only items
-    return data?.items || [];
+    return enriched;
   } catch (error) {
     console.error("Error fetching data by bill number:", error);
     return [];

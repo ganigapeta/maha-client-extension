@@ -104,22 +104,42 @@ export async function fetchBeneficiaryList(data, setApiRes) {
       schemeData?.schemeType === "Pension Schemes" ||
       schemeData?.schemeType === "Special Assistance Schemes";
 
-    const filterAllotmentTable = isPensionScheme
-      ? result?.items || [] // skip allotment filter for pension — return all items directly
-      : await fetchAllotmentData(result?.items || [], url1, data);
-    console.log("filterAllotmentTable:::::::::", filterAllotmentTable);
+    const isLekLadkiInstallment = String(data?.installment || "").startsWith(
+      "Installment",
+    );
+    const isMonthlyBenefitInstallment = String(
+      data?.installment || "",
+    ).startsWith("Monthly Benefit_");
+
+    const filterAllotmentTable =
+      (isPensionScheme && !isLekLadkiInstallment) || isMonthlyBenefitInstallment
+        ? result?.items || []
+        : await fetchAllotmentData(result?.items || [], url1, data);
 
     let responseDataAfterKpi = await getKipdashboardDataUsingEntryId(
       filterAllotmentTable || [],
+      schemeData.scrutinyLogObjId,
+      data.installment,
     );
+
+    // Filter by specific month if Monthly Benefit month is selected
+    if (data.installment?.startsWith("Monthly Benefit_")) {
+      const [, monthName] = data.installment.split("_");
+      const targetMonth = new Date(`${monthName} 1, 2000`).getMonth();
+
+      responseDataAfterKpi = responseDataAfterKpi.filter((item) => {
+        const date = new Date(item.dateCreated);
+        return !isNaN(date.getTime()) && date.getMonth() === targetMonth;
+      });
+    }
 
     console.log("Beneficiary List with kpi", responseDataAfterKpi);
 
     const sortedData = responseDataAfterKpi?.length
       ? [...responseDataAfterKpi].sort(
           (a, b) =>
-            new Date(b.kpiData?.dateModified || 0) -
-            new Date(a.kpiData?.dateModified || 0),
+            new Date(a.kpiData?.dateModified || 0) -
+            new Date(b.kpiData?.dateModified || 0),
         )
       : [];
 
@@ -132,7 +152,11 @@ export async function fetchBeneficiaryList(data, setApiRes) {
   }
 }
 
-export async function getKipdashboardDataUsingEntryId(items) {
+export async function getKipdashboardDataUsingEntryId(
+  items,
+  scrutinyLogObjId,
+  selectedInstallment,
+) {
   try {
     const updatedItems = await Promise.all(
       items.map(async (item) => {
@@ -170,20 +194,68 @@ export async function getKipdashboardDataUsingEntryId(items) {
               const installments = benefits?.installments || {};
               const installmentKeys = Object.keys(installments);
 
-              installment1 = installmentKeys
-                .filter((k) => k.includes("1") || k === "Monthly Benefit" || k === "One-time Interest Subsidy")
-                .reduce((sum, k) => sum + (Number(installments[k]) || 0), 0);
+              if (
+                selectedInstallment &&
+                selectedInstallment.startsWith("Installment") &&
+                installments[selectedInstallment] !== undefined
+              ) {
+                installment1 = Number(installments[selectedInstallment]) || 0;
+                installment2 = 0;
+                totalAmount = installment1;
+              } else {
+                installment1 = installmentKeys
+                  .filter(
+                    (k) =>
+                      k.includes("1") ||
+                      k === "Monthly Benefit" ||
+                      k === "One-time Interest Subsidy" ||
+                      k === "Monthly Reimbursement",
+                  )
+                  .reduce((sum, k) => sum + (Number(installments[k]) || 0), 0);
 
-              installment2 = installmentKeys
-                .filter((k) => k.includes("2"))
-                .reduce((sum, k) => sum + (Number(installments[k]) || 0), 0);
+                // Fallback: if installments is empty, sum all additionalBenefits (e.g. MVYS uses {allowance: 3000})
+                if (installment1 === 0) {
+                  const additionalBenefits = benefits?.additionalBenefits || {};
+                  installment1 = Object.values(additionalBenefits).reduce(
+                    (sum, v) => sum + (Number(v) || 0),
+                    0,
+                  );
+                }
 
-              totalAmount =
-                benefits?.totalAmount || installment1 + installment2;
+                installment2 = installmentKeys
+                  .filter((k) => k.includes("2") && !k.includes("1"))
+                  .reduce((sum, k) => sum + (Number(installments[k]) || 0), 0);
+
+                totalAmount =
+                  benefits?.totalAmount || installment1 + installment2;
+              }
             } catch (e) {
               console.error("Invalid JSON", e);
             }
           }
+
+          const scrutinyLogs = await getScrutinyLogsForEntry(
+            item.id,
+            scrutinyLogObjId,
+          );
+
+          // Extract approval dates based on typical role keywords
+          // Institute approval = oldest log matching institute role (first approval)
+          // Department approval = newest log matching department role (final approval)
+          const instituteLogs = scrutinyLogs.filter((log) =>
+            /clerk|principal|institute/i.test(log.scrutinyUserRole),
+          );
+          const departmentLogs = scrutinyLogs.filter((log) =>
+            /dda|dpo|sno|department/i.test(log.scrutinyUserRole),
+          );
+
+          // Approval Date: first entry in scrutiny logs (first approval on application)
+          // Institute/Department Approval Date: same as approval date (application approval date)
+          const approvalDate =
+            scrutinyLogs.length > 0
+              ? scrutinyLogs[scrutinyLogs.length - 1].dateCreated
+              : null;
+          const instituteApprovalDate = approvalDate;
 
           return {
             ...item,
@@ -191,6 +263,8 @@ export async function getKipdashboardDataUsingEntryId(items) {
             installment1,
             installment2,
             totalAmount,
+            approvalDate,
+            instituteApprovalDate,
           };
         } catch (err) {
           console.error(`Error fetching KPI for ID ${item.id}`, err);
@@ -210,6 +284,16 @@ export async function getKipdashboardDataUsingEntryId(items) {
     console.error("getKipdashboardDataUsingEntryId Error:", error);
     throw error;
   }
+}
+
+export function formatDate(dateString) {
+  if (!dateString || dateString === "0" || dateString === 0) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime()) || date.getTime() === 0) return "-";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 // export async function fetchAllotmentData(items, url,data) {
@@ -273,11 +357,25 @@ export async function fetchAllotmentData(items, url, data) {
     const results = await Promise.all(
       items.map(async (item) => {
         try {
+          const isLekLadkiInst = String(data?.installment || "").startsWith(
+            "Installment",
+          );
+          const instNumber = isLekLadkiInst
+            ? parseInt(
+                data.installment.replace("Installment ", "").trim(),
+                10,
+              ) || 1
+            : data.installment === "2nd Installment"
+              ? 2
+              : 1;
+
           // Build the base filter
           let filter = `applicationNo eq '${item.applicationreferencenumber}' and applicationState eq 'Bill Submitted'`;
 
-          // Add installmentStatus filter only for 2nd Installment
-          if (data.installment === "2nd Installment") {
+          // For Lek Ladki 2+ or POM 2nd installment, add installmentStatus filter
+          if (isLekLadkiInst && instNumber > 1) {
+            filter += ` and installmentStatus eq ${instNumber - 1}`;
+          } else if (data.installment === "2nd Installment") {
             filter += ` and installmentStatus eq 1`;
           }
 
@@ -301,46 +399,37 @@ export async function fetchAllotmentData(items, url, data) {
           const responseData = await response.json();
           console.log("fetchAllotmentData data::::::::::", responseData);
 
-          // For 2nd Installment, only return items that have installmentStatus === 1
-          if (data.installment === "2nd Installment") {
-            console.log(
-              "data.installment === 2nd Installment",
-              data.installment === "2nd Installment",
-              " responseData?.items:::::",
-              responseData?.items,
-            );
-            // Check if API returned items with installmentStatus === 1
+          if (isLekLadkiInst) {
+            if (instNumber === 1) {
+              // Installment 1 — eligible if NO prior allotment exists
+              return !responseData?.items || responseData.items.length === 0
+                ? { ...item }
+                : null;
+            } else {
+              // Installment 2+ — eligible if prior installment allotment exists
+              if (responseData?.items && responseData.items.length > 0) {
+                const validItems = responseData.items.filter(
+                  (responseItem) =>
+                    responseItem.installmentStatus === instNumber - 1,
+                );
+                return validItems.length > 0 ? { ...item } : null;
+              }
+              return null;
+            }
+          } else if (data.installment === "2nd Installment") {
+            // POM 2nd installment — existing logic
             if (responseData?.items && responseData.items.length > 0) {
-              // Filter to only include items with installmentStatus === 1
               const validItems = responseData.items.filter(
                 (responseItem) => responseItem.installmentStatus === 1,
               );
-
-              if (validItems.length > 0) {
-                // installmentStatus === 1 found = 1st installment done = eligible for 2nd
-                return {
-                  ...item,
-                };
-              } else {
-                // No 1st installment found = not eligible for 2nd
-                return null;
-              }
-            } else {
-              // No items returned from API, return the item to be processed
-              return null;
-              // return {
-              //   ...item,
-              // };
+              return validItems.length > 0 ? { ...item } : null;
             }
+            return null;
           } else {
-            // For other installments, original logic
-            if (responseData?.items && responseData.items.length > 0) {
-              return null;
-            } else {
-              return {
-                ...item,
-              };
-            }
+            // Original logic for other installments
+            return responseData?.items && responseData.items.length > 0
+              ? null
+              : { ...item };
           }
         } catch (error) {
           console.error("Error for item:", item, error);
@@ -349,9 +438,7 @@ export async function fetchAllotmentData(items, url, data) {
       }),
     );
 
-    // Remove null values
     const filteredItems = results.filter((item) => item !== null);
-
     return filteredItems;
   } catch (error) {
     console.error("Main Error:", error);
@@ -430,6 +517,36 @@ export async function fetchObjectInfo(objectDefinitionId) {
   } catch (error) {
     console.error("fetchObjectInfo Error:", error);
     throw error;
+  }
+}
+
+export async function getScrutinyLogsForEntry(entryId, scrutinyLogObjId) {
+  try {
+    if (!entryId || !scrutinyLogObjId) return [];
+
+    const obj = await fetchObjectInfo(scrutinyLogObjId);
+    if (!obj?.restContextPath) return [];
+
+    const filter = encodeURIComponent(`schemeApplicationId eq '${entryId}'`);
+    const url = `${obj.restContextPath}?filter=${filter}&sort=dateCreated:desc`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "x-csrf-token": window.Liferay?.authToken || "",
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return data.items || [];
+  } catch (err) {
+    console.error("Error fetching scrutiny logs:", err);
+    return [];
   }
 }
 
