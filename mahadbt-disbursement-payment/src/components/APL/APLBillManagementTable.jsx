@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { saveSelectedBeneficiarie, getBills, getDataBaseOnBillNumber, saveSelectedBeneficiarieAPL } from "./../../api/save"; import BillSubmission from "./APLBillSubmission";
+import { saveSelectedBeneficiarie, getBills, getDataBaseOnBillNumber, saveSelectedBeneficiarieAPL, saveSelectedBeneficiarieAPLMock } from "./../../api/save"; import BillSubmission from "./APLBillSubmission";
 import { getObjectName } from './../../api/fetch-scheme';
 import jsPDF from 'jspdf';
 
@@ -69,7 +69,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
     const saveData = async () => {
       try {
         console.log("Step 6 - calling saveSelectedBeneficiarie with", allocateInputData);
-       const resp =  await saveSelectedBeneficiarieAPL(
+       const resp =  await saveSelectedBeneficiarieAPLMock(
           selectedBeneficiaries,
           apiRes,
           allocateInputData,
