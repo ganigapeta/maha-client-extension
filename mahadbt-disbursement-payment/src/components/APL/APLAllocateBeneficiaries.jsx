@@ -19,7 +19,7 @@ const APLAllocationDetailsCard = ({
 
   const [showGenerateModal, setShowGenerateModal] = useState({
       show: false,
-      isConform: true
+      isConform: false
     });
   // Calculate allocated amount based on selected beneficiaries
   const isPensionInstallment = searchData?.installment === "Monthly Benefit";
@@ -187,10 +187,10 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
   // Fixed handleAllocate method
   const handleAllocate = async () => {
     
-    if (!allocateInputData.officePaymentNumber) {
-      setValidationMessage({ text: 'Please enter office payment number', type: 'error' });
-      return;
-    }
+    // if (!allocateInputData.officePaymentNumber) {
+    //   setValidationMessage({ text: 'Please enter office payment number', type: 'error' });
+    //   return;
+    // }
 
 
     const payload = await apiService.allocateAPLBeneficiaries(searchResults?.families, searchData);
@@ -313,7 +313,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
 
      setAllocateInputData(prev => ({
           ...prev,
-         schemeCode: 'FACS-FACS-APL-2-26-XXX',
+         schemeCode: 'PEN-SJSA-SGNY-2-26-023',
          allocatedAmount: searchResults?.total_amount,
          beneficiaryCount: searchResults?.total_families || 0,
          submittedStatus: "Pending",
@@ -664,7 +664,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
                   </tr>
 
                   {/* Row 11: Office Payment Number */}
-                  <tr>
+                  {/* <tr>
                     <td
                       className="fw-bold"
                       style={{ padding: "10px", backgroundColor: "#e9ecef" }}
@@ -686,7 +686,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
                         readOnly={allocationSuccess}
                       />
                     </td>
-                  </tr>
+                  </tr> */}
                 </tbody>
               </table>
             </div>
@@ -697,14 +697,14 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
               style={{ minWidth: "250px" }}
             >
               <button
-                className="btn btn-success px-4 py-2"
+                className="btn btn-primary px-4 py-2"
                 onClick={handleDownloadExcel}
               >
                 <i className="bi bi-file-earmark-excel me-2"></i>
                 Download Beneficiary List - Excel
               </button>
               <button
-                className="btn btn-danger px-4 py-2"
+                className="btn btn-primary px-4 py-2"
                 onClick={handleDownloadPDF}
               >
                 <i className="bi bi-file-earmark-pdf me-2"></i>
@@ -767,6 +767,8 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
           }
         `}</style>
       </div>
+
+
 
       {showGenerateModal.show && (
         <>

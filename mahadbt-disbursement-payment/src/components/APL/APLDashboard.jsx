@@ -45,7 +45,7 @@ function APLDashboard({
   checkBalance,
 }) {
   const [masterData, setMasterData] = useState({});
-  const [show, setShow] = useState(true);
+  const [show, setShow] = useState(false);
   const [backupSearchData, setBackupSearchData] = useState([]);
   const [showLoader, setShowLoader] = useState(false);
   const [months, setMonths] = useState([]);

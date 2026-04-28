@@ -83,6 +83,107 @@ export async function saveSelectedBeneficiarieAPL(
   }
 }
 
+export async function saveSelectedBeneficiarieAPLMock(
+  selectedBeneficiaries,
+  apiRes,
+  allocateInputData,
+  userId,
+) {
+
+  const res = {
+  "actions": {
+    "updateBatch": {
+      "method": "PUT",
+      "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/batch"
+    },
+    "create": {
+      "method": "POST",
+      "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/"
+    },
+    "createBatch": {
+      "method": "POST",
+      "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/batch"
+    },
+    "deleteBatch": {
+      "method": "DELETE",
+      "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/batch"
+    }
+  },
+  "facets": [],
+  "items": [
+    {
+      "actions": {
+        "permissions": {
+          "method": "GET",
+          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663/permissions"
+        },
+        "get": {
+          "method": "GET",
+          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663"
+        },
+        "replace": {
+          "method": "PUT",
+          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663"
+        },
+        "update": {
+          "method": "PATCH",
+          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663"
+        },
+        "delete": {
+          "method": "DELETE",
+          "href": "https://mahadbt2-uat-dashboard.quantela.com/o/c/billmanagements/5486663"
+        }
+      },
+      "creator": {
+        "additionalName": "",
+        "contentType": "UserAccount",
+        "externalReferenceCode": "dc265952-2d22-3a98-e120-10d9011e228e",
+        "familyName": "sno",
+        "givenName": "pension",
+        "id": 5486540,
+        "name": "pension sno"
+      },
+      "dateCreated": "2026-04-13T18:17:06Z",
+      "dateModified": "2026-04-13T18:17:06Z",
+      "externalReferenceCode": "7b532413-ed22-cdbf-9501-28ff45086f44",
+      "id": 5486663,
+      "keywords": [],
+      "status": {
+        "code": 0,
+        "label": "approved",
+        "label_i18n": "Approved"
+      },
+      "taxonomyCategoryBriefs": [],
+      "beamsPdfId": "",
+      "beneficiaryCount": "1",
+      "paymentAuthLetter": "",
+      "coveringLetter": "",
+      "ddoUserId": "5486540",
+      "schemeCode": "PEN-SJSA-SGNY-2-26-023",
+      "userData": "",
+      "submittedStatus": "Pending",
+      "beamsStatus": "",
+      "mtrFile": "",
+      "beneficiaryExport": "",
+      "cancelBill": "",
+      "ddoCode": "",
+      "allocatedAmount": "0.00",
+      "beamsPdfUrl": "",
+      "beamsPdfData": "",
+      "billStatus": "",
+      "billNumber": "184219510",
+      "officePaymentNumber": ""
+    }
+  ],
+  "lastPage": 1,
+  "page": 1,
+  "pageSize": 200,
+  "totalCount": 1
+};
+  return res.items[0];
+  
+}
+
 export async function saveSelectedBeneficiarie(
   selectedBeneficiaries,
   apiRes,
