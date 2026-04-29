@@ -834,11 +834,25 @@ class APLBillService {
   /**
    * Bulk update WIP status (for DFSO approve/reject operations)
    */
-  async bulkUpdateStatus(rcNumbers, status, remarks = null, userId = 1) {
+  async bulkUpdateStatus(rcNumbers, status, remarks = null, userId = 1, fy = null, mm = null) {
     const client = await db.pool.connect();
 
     try {
       await client.query('BEGIN');
+
+    let statusWhereClause = `rft_status = 'ALLOTTED'`;
+
+    if(status === 'BILL_GENERATED'){
+      statusWhereClause = `rft_status = 'ALLOTTED'`;
+    }
+
+    if(status === 'DISBURSED'){
+      statusWhereClause = `rft_status = 'BILL_GENERATED'`;
+    }
+    
+    if(fy && mm){
+      statusWhereClause += ` AND fy = '${fy}' AND mm = ${mm}`;
+    }
 
       const updatedRecords = [];
 
@@ -846,12 +860,11 @@ class APLBillService {
       for (const rcNo of rcNumbers) {
         const query = `
           UPDATE ${tables.APL_ALLOTMENT_DETAIL}
-          SET wf_status = $1,
+          SET rft_status = $1,
               updated_by = $2,
-              updated_at = CURRENT_TIMESTAMP,
-              remarks = $3
-          WHERE rc_no = $4
-            AND wf_status = 'SCRUTINY_PENDING'
+              updated_at = CURRENT_TIMESTAMP
+          WHERE allotment_id = $4
+            AND ${statusWhereClause}
           RETURNING *
         `;
 

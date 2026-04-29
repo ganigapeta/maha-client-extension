@@ -7,7 +7,7 @@ abovepovertylane-scheme-scrutiny:
     friendlyURLMapping: abovepovertylane-scheme-scrutiny
     htmlElementName: abovepovertylane-scheme-scrutiny
     instanceable: false
-    name: Above Poverty Lane Scheme Scrutiny
+    name: Above Poverty Line Scheme Scrutiny V2
     portletCategoryName: category.client-extensions
     type: customElement
     urls:

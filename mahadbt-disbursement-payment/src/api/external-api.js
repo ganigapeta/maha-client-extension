@@ -83,7 +83,7 @@ const transformToFamilyStructure = (apiData) => {
       ekyc: record.ekyc,
       bank_account: determineBankAccount(record),
       is_aadhaar_linked_account: record.is_aadhaar_linked_account,
-      is_hof: record.relation_name === 'SELF' || record.relation_name === 'HOF',
+      is_hof: record.relation_name?.toLowerCase() === 'self' || record.relation_name?.toLowerCase() === 'hof',
       dist_code: record.dist_code,
       dfso_code: record.dfso_code,
       afso_code: record.afso_code,

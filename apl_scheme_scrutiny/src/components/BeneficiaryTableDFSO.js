@@ -182,7 +182,10 @@ const BeneficiaryTableDFSO = ({ beneficiaries, searchParams, userRole }) => {
     const rcNumbers = Array.from(selectedFamilies);
     const payload = {
       rc_numbers: rcNumbers,
-      status: 'APPROVED'
+      status: 'APPROVED',
+      fy: searchParams?.financialYear,
+      month: searchParams?.month,
+      fpsCode: searchParams?.fpsCode,
     };
 
     console.log('DFSO - Approve Payload:', JSON.stringify(payload, null, 2));
@@ -499,13 +502,14 @@ const BeneficiaryTableDFSO = ({ beneficiaries, searchParams, userRole }) => {
       <div className="p-6 border-t border-gray-200 flex justify-between items-center">
         <button
           onClick={handleReject}
-          className="bg-gray-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition shadow-md hover:shadow-lg"
+          className="btn-primary hover:btn-primary text-white font-semibold px-6 py-2 rounded-lg transition shadow-md hover:shadow-lg text-sm"
+          style={{ backgroundColor: '#002B70' }}
         >
           Reject
         </button>
         <button
           onClick={handleApprove}
-          className="text-white font-semibold px-8 py-3 rounded-lg transition shadow-md hover:shadow-lg hover:opacity-90"
+          className="btn-primary hover:btn-primary text-white font-semibold px-6 py-2 rounded-lg transition shadow-md hover:shadow-lg text-sm"
           style={{ backgroundColor: '#002B70' }}
         >
           Approve

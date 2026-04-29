@@ -815,9 +815,23 @@ class APLWipService {
   /**
    * Bulk update WIP status (for DFSO approve/reject operations)
    */
-  async bulkUpdateStatus(rcNumbers, status, remarks = null, userId = 1) {
+  async bulkUpdateStatus(rcNumbers, status, remarks = null, userId = 1, fy = null, mm = null) {
     const client = await db.pool.connect();
+    let statusWhereClause = `wf_status = 'SCRUTINY_PENDING'`;
+    if(status === 'APPROVED' || status === 'REJECTED'){
+     statusWhereClause = `wf_status = 'SCRUTINY_PENDING'`;
+    }
+    if(status === 'BILL_GENERATED'){
+      statusWhereClause = `wf_status = 'APPROVED'`;
+    }
 
+    if(status === 'DISBURSED'){
+      statusWhereClause = `wf_status = 'BILL_GENERATED'`;
+    }
+    
+    if(fy && mm){
+      statusWhereClause += ` AND fy = '${fy}' AND mm = ${mm}`;
+    }
     try {
       await client.query('BEGIN');
 
@@ -832,7 +846,7 @@ class APLWipService {
               updated_at = CURRENT_TIMESTAMP,
               remarks = $3
           WHERE rc_no = $4
-            AND wf_status = 'SCRUTINY_PENDING'
+            AND ${statusWhereClause}
           RETURNING *
         `;
 

@@ -73,7 +73,7 @@
     border-bottom:2px solid var(--grey-color) !important;
     color:var(--grey-color) !important;
 }
-.btn:hover,
+/* .btn:hover, */
 .nav-link:hover{
     background:transparent !important;
     box-shadow:none !important;
