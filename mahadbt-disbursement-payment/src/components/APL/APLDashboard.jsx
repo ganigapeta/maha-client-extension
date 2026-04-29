@@ -65,7 +65,12 @@ function APLDashboard({
       const roleNames = (roles || []).map(r => r.name);
       const schemes = await fetchSchemeNameByRole(roleNames);
       if (schemes.length === 0) {
-        schemes.push({ id: '179438_179438', name: 'Above Poverty Line (APL) Scheme', schemeCode: 'APL', benefitsJsonData: '' });
+        schemes.push({ 
+          id: '179438_179438',
+          name: 'Above Poverty Line (APL) Scheme',
+          schemeCode: 'PEN-SJSA-SGNY-2-26-023',
+          benefitsJsonData: ''
+        });
       }
       setMasterData(prev => ({ ...prev, schemes }));
     };
@@ -108,8 +113,9 @@ function APLDashboard({
     
     try {
       const results = await apiService.getWIPBeneficiaries(data);
+      const familyObj = results?.families?.[0];
       setSearchResults(results || []);
-      setSearchData(data);
+      setSearchData({ ...data, ...familyObj });
       setBackupSearchData(results.families || []);
       setShowLoader(false);
       setShow(true);
@@ -154,7 +160,7 @@ function APLDashboard({
                   {masterData.schemes?.map((scheme) => (
                     <option
                       key={scheme.id}
-                      value={scheme.id + '_' + scheme.r_schemeMapping_c_schemeConfiguratorId}
+                      value={scheme.schemeCode}
                     >
                       {scheme.name}
                     </option>
