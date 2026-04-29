@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { getPicklistByERC } from './fetch-masters';
 
-const API_BASE_URL = process.env.REACT_APP_API_APL_URL || 'http://localhost:3000/apl/v1';
-const API_BASE_URL_PREFIX = process.env.REACT_APP_API_APL_URL_PREFIX || '/apl/v1';
+const API_BASE_URL = process.env.REACT_APP_API_APL_URL || 'https://mahadbt2-qa-dashboard.quantela.com/apl';
+const API_BASE_URL_PREFIX = process.env.REACT_APP_API_APL_URL_PREFIX || '/v1';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}${API_BASE_URL_PREFIX}`,
@@ -84,7 +84,7 @@ const transformToFamilyStructure = (apiData) => {
       ekyc: record.ekyc,
       bank_account: determineBankAccount(record),
       is_aadhaar_linked_account: record.is_aadhaar_linked_account,
-      is_hof: record.relation_name === 'SELF' || record.relation_name === 'HOF',
+      is_hof: record.relation_name?.toLowerCase() === 'self' || record.relation_name?.toLowerCase() === 'hof',
       dist_code: record.dist_code,
       dfso_code: record.dfso_code,
       afso_code: record.afso_code,
@@ -508,6 +508,25 @@ export const apiService = {
 
   // Update WIP data status (bulk update to APPROVED)
   updateWIPDataStatus: async (payload) => {
+
+     // Extract month number from month name
+      const monthMap = {
+        January: 1,
+        February: 2,
+        March: 3,
+        April: 4,
+        May: 5,
+        June: 6,
+        July: 7,
+        August: 8,
+        September: 9,
+        October: 10,
+        November: 11,
+        December: 12,
+      };
+      const mm = monthMap[payload.month] || parseInt(payload.month);
+      payload.mm = mm; // Month number 1-12
+
     const response = await api.post("/apl-wip/bulk-update-status", payload);
     return response.data;
   },

@@ -26,7 +26,7 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
   const [afsoList, setAfsoList] = useState([]);
   const [fpsList, setFpsList] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
-  const [showTable, setShowTable] = useState(true);
+  const [showTable, setShowTable] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAFSO, setIsAFSO] = useState(userRole === 'AFSO');
 
@@ -413,8 +413,8 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
               <button
                 onClick={handleProceed}
                 disabled={!isFormValid() || loading}
-                className="btn btn-primary fw-semibold px-4 py-2 shadow"
-                style={{ backgroundColor: '#002B70', borderColor: '#002B70' }}
+                className="btn-primary hover:btn-primary text-white font-semibold px-6 py-2 rounded-lg transition shadow-md hover:shadow-lg text-sm"
+                 style={{ backgroundColor: '#002B70', borderColor: '#002B70' }}
               >
                 {loading ? "Loading..." : "Proceed"}
               </button>
@@ -468,7 +468,7 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
               </div>
               <button
                 onClick={handleFinalSubmit}
-                className="btn text-white fw-semibold px-4 py-2 shadow"
+                className="btn-primary hover:btn-primary text-white font-semibold px-6 py-2 rounded-lg transition shadow-md hover:shadow-lg text-sm"
                 style={{ backgroundColor: '#002B70' }}
               >
                 Submit

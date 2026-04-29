@@ -68,7 +68,7 @@ const ErrorModal = ({
           <Button
             variant="danger"
             onClick={onClose}
-            className="fw-semibold px-4 py-2 shadow"
+            className="fw-semibold px-4 py-2 shadow rounded-lg"
             style={{ minWidth: '120px' }}
           >
             {buttonText}

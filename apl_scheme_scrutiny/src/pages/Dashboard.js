@@ -16,10 +16,10 @@ function Dashboard() {
       try {
         // Get user ID from Liferay
          // Get user ID from Liferay
-        const userId = 3068014//3068014 -AFSO; //window.Liferay?.ThemeDisplay?.getUserId();
+        // const userId = 3068014//3068014 -AFSO; //window.Liferay?.ThemeDisplay?.getUserId();
         // const userId = 3068039//3068039 -DFSO; //window.Liferay?.ThemeDisplay?.getUserId();
 
-        // const userId = window.Liferay?.ThemeDisplay?.getUserId();
+        const userId = window.Liferay?.ThemeDisplay?.getUserId();
 
         if (!userId) {
           console.warn('No user ID found from Liferay');

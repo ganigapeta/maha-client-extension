@@ -292,7 +292,7 @@ async function aplWipRoutes(fastify, options) {
           fpsCode: { type: 'integer' },
           afsoCode: { type: 'integer' },
           dfsoCode: { type: 'integer' },
-          fy: { type: 'string', description: 'Financial Year (e.g., 2023-24) - informational only' },
+          fy: { type: 'string', description: 'Financial Year (e.g., 2023-2024) - informational only' },
           mm: { type: 'integer', minimum: 1, maximum: 12, description: 'Month number (1-12) - informational only' },
           status: { type: 'string', enum: ['APPROVED'], default: 'APPROVED', description: 'Fixed to APPROVED for old scrutiny' },
           latestOnly: { type: 'boolean', default: true, description: 'Get latest distinct records only' },
@@ -326,9 +326,11 @@ async function aplWipRoutes(fastify, options) {
           },
           status: { 
             type: 'string', 
-            enum: ['APPROVED', 'REJECTED'],
+            enum: ['APPROVED', 'REJECTED', 'ALLOTED', 'BILL_GENERATED', 'DISBURSED'],
             description: 'New status for the records'
           },
+          fy: { type: 'string', description: 'Financial Year (e.g., 2023-2024) - informational only' },
+          mm: { type: 'integer', minimum: 1, maximum: 12, description: 'Month number (1-12) - informational only' },
           remarks: { 
             type: 'string',
             description: 'Optional remarks (required for REJECTED status)'
@@ -338,7 +340,7 @@ async function aplWipRoutes(fastify, options) {
     }
   }, async (request, reply) => {
     try {
-      const { rc_numbers, status, remarks } = request.body;
+      const { rc_numbers, status, remarks, fy, mm } = request.body;
       
       // Validate remarks for REJECTED status
       if (status === 'REJECTED' && !remarks) {
@@ -346,7 +348,7 @@ async function aplWipRoutes(fastify, options) {
       }
       
       const userId = request.headers['x-user-id'] || 1;
-      const result = await aplWipService.bulkUpdateStatus(rc_numbers, status, remarks, userId);
+      const result = await aplWipService.bulkUpdateStatus(rc_numbers, status, remarks, userId, fy, mm);
       
       return reply.send(successResponse(
         result.data,

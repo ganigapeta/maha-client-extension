@@ -306,16 +306,16 @@ async function aplBillRoutes(fastify, options) {
       tags: ['APL Bill'],
       body: {
         type: 'object',
-        required: ['rc_numbers', 'status'],
+        required: ['allotment_id', 'status'],
         properties: {
-          rc_numbers: { 
+          allotment_id: { 
             type: 'array', 
             items: { type: 'integer' },
             description: 'Array of RC numbers to update'
           },
           status: { 
             type: 'string', 
-            enum: ['APPROVED', 'REJECTED'],
+            enum: ['APPROVED', 'REJECTED', 'BILL_GENERATED', 'DISBURSED'],
             description: 'New status for the records'
           },
           remarks: { 
