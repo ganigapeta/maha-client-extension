@@ -11,8 +11,7 @@ import pdfMakeVfs from 'pdfmake/build/vfs_fonts';
 // Setup pdfmake with fonts
 pdfMake.vfs = pdfMakeVfs;
 
-const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateInputData, isPensionRole = false, searchData }) => {
-  console.log(isPensionRole, "isPensionRole");
+const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateInputData, isPensionRole = false, searchData, billGeneratedBillInfo }) => {
   const [loginUserId, setLoginUserId] = useState(null);
   const [responseData, setResponseData] = useState([]);
   const [submittedBillList, setSubmittedBillList] = useState([]);
@@ -38,6 +37,8 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
     apiRes?.userRoles?.map(role => (role?.name || role || "").toString().toLowerCase().trim()) || [];
 
   const isSnoRole = roleNames.some(role => SNO_ROLES.includes(role));
+
+  const [billInfo, setBillInfo] = useState({});
 
   // Setup fonts on component mount
   useEffect(() => {
@@ -104,6 +105,12 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
 
     saveData();
   }, [selectedBeneficiaries, apiRes, allocateInputData]);
+
+  useEffect(() => {
+    if (billGeneratedBillInfo && responseData.length > 0) {
+      setBillInfo({...billGeneratedBillInfo, dataId: responseData[0].id });
+    }
+  }, [billGeneratedBillInfo, responseData]);
 
   const tableData = responseData || [];
 
@@ -1656,14 +1663,15 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
         formData.append("file", pdfBlob, fileName);
         formData.append("title", fileName);
         formData.append("description", `RFT generated for bill ${rowData?.billNumber || ""}`);
-
+        const url = `/o/headless-delivery/v1.0/sites/20118/documents`;
         const uploadRes = await fetch(
-          `/o/headless-delivery/v1.0/sites/${siteId}/documents`,
+          url,
           {
             method: "POST",
             headers: {
               Accept: "application/json",
-              "x-csrf-token": window.Liferay?.authToken || "",
+              // "x-csrf-token": window.Liferay?.authToken || "",
+              Authorization: "Basic " + btoa("prabhudasu:root"),
             },
             credentials: "include",
             body: formData,
@@ -1689,7 +1697,8 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            "x-csrf-token": window.Liferay?.authToken || "",
+            // "x-csrf-token": window.Liferay?.authToken || "",
+            Authorization: "Basic " + btoa("prabhudasu:root"),
           },
           credentials: "include",
           body: JSON.stringify({
@@ -1950,14 +1959,15 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
         </div>
       )}
 
-      {submittedBillList.length > 0 && (
+      {billGeneratedBillInfo.allotment_id && (
         <APLBillSubmission
+          searchData={searchData}
           apiRes={apiRes}
           submittedBillList={submittedBillList}
           setResponseData={setResponseData}
           setSubmittedBillList={setSubmittedBillList}
           generateRftOnly={generateRftOnly}
-          billRowData={tableData.find(item => item.billNumber === submittedBillList?.[0]?.batchID)}
+          billRowData={billInfo}
         />
       )}
       {showPasswordModal && (
