@@ -136,7 +136,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
   }
 
   const getDistrictName = () => {
-    return searchData?.distCode || "N/A";
+    return searchData?.dist_name || "N/A";
   };
 
   const allocationData = {
@@ -184,9 +184,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
     const isLekLadki = String(apiRes?.schemeData?.schemeCode || '').startsWith('SPA-WCDD-LEKL');
     const hasInstituteName = backupSearchData.some(item => item.collegeName);
-
     const isFirstInstallment = searchData?.installment === "1st Installment" || isPensionInstallment;
-
     const dataToExport = await Promise.all(
       backupSearchData.map(async (item, index) => {
         const amount = isFirstInstallment
@@ -235,16 +233,15 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
   const handleGenerateBill = () => {
     setAllocateInputData(prev => ({
-          ...prev,
-         schemeCode: 'PEN-SJSA-SGNY-2-26-023',
-         allocatedAmount: searchResults?.total_amount,
-         beneficiaryCount: searchResults?.total_families || 0,
-         submittedStatus: "Pending",
-         noOfBeneficiariesAllocated: searchResults?.total_families || 0,
-         noOfBeneficiariesInput: searchResults?.total_families || 0,
-
-          // Don't reset allocated amount and allocated beneficiaries here
-          // as they represent actual allocated values
+      ...prev,
+      schemeCode: searchData?.schemeName,
+      allocatedAmount: searchResults?.total_amount,
+      beneficiaryCount: searchResults?.total_families || 0,
+      submittedStatus: "Pending",
+      noOfBeneficiariesAllocated: searchResults?.total_families || 0,
+      noOfBeneficiariesInput: searchResults?.total_families || 0,
+      // Don't reset allocated amount and allocated beneficiaries here
+      // as they represent actual allocated values
     }));
 
     setShowGenerateModal({
@@ -742,15 +739,15 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
               Allocate Beneficiaries
             </button>
           </div>
+        </div>
 
-          <div className="p-3 d-flex justify-content-end gap-2">
+        <div className="p-3 d-flex align-items-center gap-2">
             <button
               className="btn btn-primary px-4"
               onClick={() => handleGenerateBill()}
             >
               Generate Bill
             </button>
-          </div>
         </div>
         
         <style jsx>{`

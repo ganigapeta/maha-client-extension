@@ -21,7 +21,8 @@ export async function saveSelectedBeneficiarie(
       {
         headers: {
           Accept: "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
+          // "x-csrf-token": window.Liferay?.authToken || "",
+          Authorization: "Basic " + btoa("prabhudasu:root"),
         },
         credentials: "include",
       },
@@ -41,7 +42,8 @@ export async function saveSelectedBeneficiarie(
           {
             headers: {
               Accept: "application/json",
-              "x-csrf-token": window.Liferay?.authToken || "",
+              // "x-csrf-token": window.Liferay?.authToken || "",
+              Authorization: "Basic " + btoa("prabhudasu:root"),
             },
             credentials: "include",
           },
@@ -55,10 +57,7 @@ export async function saveSelectedBeneficiarie(
 
     let payload = {
       billNumber: selectedBeneficiaries[0].batchID,
-      schemeCode:
-        apiRes?.schemeData?.schemeCode ||
-        apiRes?.schemeData?.integrationSchemeCode ||
-        "",
+      schemeCode: allocateInputData.schemeCode || '',
       ddoCode: ddoCodeValue,
       allocatedAmount: allocateInputData?.allocatedAmount || 0,
       beneficiaryCount: allocateInputData?.noOfBeneficiariesInput || 0,
@@ -73,7 +72,8 @@ export async function saveSelectedBeneficiarie(
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        "x-csrf-token": window.Liferay?.authToken || "",
+        // "x-csrf-token": window.Liferay?.authToken || "",
+        Authorization: "Basic " + btoa("prabhudasu:root"),
       },
       credentials: "include",
       body: JSON.stringify(payload),
@@ -105,7 +105,8 @@ export async function getBills(ddoUserId) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
+          // "x-csrf-token": window.Liferay?.authToken || "",
+          Authorization: "Basic " + btoa("prabhudasu:root"),
         },
         credentials: "include",
       },

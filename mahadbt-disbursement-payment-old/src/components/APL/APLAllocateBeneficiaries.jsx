@@ -122,9 +122,6 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
       .toFixed(2);
   };
 
-
-
-
   function formatDate(dateString) {
     try {
       const date = new Date(dateString);
@@ -186,28 +183,9 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
  
   // Fixed handleAllocate method
   const handleAllocate = async () => {
-    
-    // if (!allocateInputData.officePaymentNumber) {
-    //   setValidationMessage({ text: 'Please enter office payment number', type: 'error' });
-    //   return;
-    // }
-
 
     const payload = await apiService.allocateAPLBeneficiaries(searchResults?.families, searchData);
-    // Calculate allocated amount
-    console.log("Payload:::::::", payload)
    
-  //  if(payload?.status){
-        console.log("Payload:::::::", payload)
-        setSelectedBeneficiaries(payload?.data || []);
-
-  //  }
-    // =payload.data;
-
-    
-
-  
-
     setValidationMessage({
       text: `Successfully allocated ${searchResults?.total_families} beneficiaries with amount ₹${searchResults?.total_amount}`,
       type: 'success'
@@ -215,8 +193,6 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
 
     // Set allocation success to true to keep office payment number visible
     setAllocationSuccess(true);
-
-    //alert(`Allocated ${numValue} beneficiaries. Payment No: ${allocateInputData.officePaymentNumber}`);
   };
 
   const handleInputChange = (e) => {
@@ -311,7 +287,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
   const handleGenerateBill = () => {
 
 
-     setAllocateInputData(prev => ({
+    setAllocateInputData(prev => ({
           ...prev,
          schemeCode: 'PEN-SJSA-SGNY-2-26-023',
          allocatedAmount: searchResults?.total_amount,
@@ -322,8 +298,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
 
           // Don't reset allocated amount and allocated beneficiaries here
           // as they represent actual allocated values
-        }));
-        // setSelectedBeneficiaries(searchResults?.families || []);
+    }));
 
 
     setShowGenerateModal({
