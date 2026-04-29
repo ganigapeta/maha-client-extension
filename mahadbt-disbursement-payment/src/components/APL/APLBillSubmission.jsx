@@ -154,7 +154,7 @@ if (isSnoRole) {
       });
       setSubmittedBillList([]);
       // Refresh bills
-      const { getBills } = await import('../api/save');
+      const { getBills } = await import('../../api/save');
       const userId = window.Liferay.ThemeDisplay.getUserId();
       await new Promise(resolve => setTimeout(resolve, 1000));
       const refreshBills = await getBills(userId);
