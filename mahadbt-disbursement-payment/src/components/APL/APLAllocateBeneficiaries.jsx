@@ -99,6 +99,8 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
   // Add state to track if allocation was successful
   const [allocationSuccess, setAllocationSuccess] = useState(false);
 
+  const [billGeneratedBillInfo, setBillGeneratedBillInfo] = useState({});
+
   // Sample data (can be overridden by props)
   const safeData = searchResults || [];
 
@@ -169,7 +171,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
   };
 
   const handleAllocate = async () => {
-    const payload = await apiService.allocateAPLBeneficiaries(searchResults?.families, searchData);
+    const payload = await apiService.allocateAPLBeneficiaries(searchResults?.families, searchData, setBillGeneratedBillInfo);
     setSelectedBeneficiaries(payload?.data || []);
     setValidationMessage({
       text: `Successfully allocated ${searchResults?.total_families} beneficiaries with amount ₹${searchResults?.total_amount}`,
@@ -783,6 +785,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
       {showGenerateModal.isConform && (
         <>
           <APLBillManagementTable
+            billGeneratedBillInfo={billGeneratedBillInfo}
             selectedBeneficiaries={selectedBeneficiaries}
             apiRes={apiRes}
             allocateInputData={allocateInputData}

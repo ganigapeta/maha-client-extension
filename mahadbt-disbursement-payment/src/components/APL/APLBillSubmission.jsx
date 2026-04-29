@@ -1,31 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { getObjectName } from '../../api/fetch-scheme';
 
-const APLBillSubmission = ({ apiRes, submittedBillList, setResponseData, setSubmittedBillList, generateRftOnly, billRowData }) => {  const [isAgreed, setIsAgreed] = useState(false);
+const APLBillSubmission = ({ apiRes, submittedBillList, setResponseData, setSubmittedBillList, generateRftOnly, billRowData, searchData }) => {  const [isAgreed, setIsAgreed] = useState(false);
   const [pdfMakeLoaded, setPdfMakeLoaded] = useState(false);
   const [beneficiaryList, setBeneficiaryList] = useState([]); // State for beneficiary data
   const [loadingBeneficiaries, setLoadingBeneficiaries] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false); // State for download loading
 
-  // Calculate total allocated amount from submittedBillList
-  const totalAllocatedAmount = submittedBillList?.reduce((total, item) => {
-    return total + (item.finalAmount || 0);
-  }, 0) || 0;
-
-
 
   // Bill details from API data
   const billDetails = {
-    schemeName: apiRes?.ddoRecord?.name || apiRes?.schemeData?.schemeName || 'N/A',
+    schemeName: searchData.schemeName || 'N/A',
     ddoCode: apiRes?.ddoRecord?.dDOCode || 'N/A',
-    schemeCode: apiRes?.ddoRecord?.integrationSchemeCode || apiRes?.schemeData?.schemeCode || 'N/A',
-    billNumber: submittedBillList?.[0]?.batchID || 'N/A',
-    allocatedBeneficiary: submittedBillList?.length || 0,
-    allocatedAmount: totalAllocatedAmount
+    schemeCode: searchData.schemeName || 'N/A',
+    billNumber: billRowData?.bill_no || 'N/A',
+    allocatedBeneficiary: billRowData?.member_name || 'N/A',
+    allocatedAmount: billRowData?.amount
   };
 
 const signingRowData = {
-  id: billRowData?.id || null,
+  id: billRowData?.dataId || null,
   billNumber: billDetails.billNumber,
   allocatedAmount: billDetails.allocatedAmount,
   beneficiaryCount: billDetails.allocatedBeneficiary,
@@ -484,7 +478,7 @@ if (isSnoRole) {
   type="button"
   className="btn btn-primary px-4"
   onClick={handleSubmit}
-  disabled={beneficiaryList.length === 0 || loadingBeneficiaries || !isAgreed}
+  disabled={billDetails.allocatedAmount === 0 || !isAgreed}
 >
   Submit Bill
 </button>

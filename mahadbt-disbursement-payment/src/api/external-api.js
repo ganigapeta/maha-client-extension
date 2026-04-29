@@ -330,7 +330,7 @@ export const apiService = {
   
 
   // Save WIP data (bulk insert) with fy and mm
-  allocateAPLBeneficiaries: async (payload, searchParams) => {
+  allocateAPLBeneficiaries: async (payload, searchParams, setBillGeneratedBillInfo) => {
     // Extract month number from month name
 
     let billNumber = generateBillNumber();
@@ -350,8 +350,9 @@ console.log("Generated Bill Number:", payload[0]);
       batchID: billNumber
     }));
     try{
-  console.log("Allocating beneficiaries with payload:", enrichedPayload);
+  setBillGeneratedBillInfo(enrichedPayload[0]);
     const response = await api.post("/apl-bill/allotment/bulk", enrichedPayload);
+    
     return {status: true, data: enrichedPayload};
      } catch (error) {
       console.error("Failed to Allocate:", error);
