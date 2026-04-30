@@ -408,8 +408,26 @@ console.log("Generated Bill Number:", payload[0]);
   },
 
   // Update Bill data status (bulk update to ALLOTTED/BILL_GENERATED/DISBURSED)
-  updateBillStatus: async (payload) => {
-    const response = await api.post("/apl-bill/allotment/bulk-update-status", payload);
+  updateRFTStatus: async (payload) => {
+    // Extract month number from month name
+      const monthMap = {
+        January: 1,
+        February: 2,
+        March: 3,
+        April: 4,
+        May: 5,
+        June: 6,
+        July: 7,
+        August: 8,
+        September: 9,
+        October: 10,
+        November: 11,
+        December: 12,
+      };
+      const mm = monthMap[payload.installment] || parseInt(payload.installment);
+      payload.mm = mm; // Month number 1-12
+
+    const response = await api.post("/apl-wip/rft-update", payload);
     return response.data;
   },
 };

@@ -815,7 +815,7 @@ class APLWipService {
   /**
    * Bulk update WIP status (for DFSO approve/reject operations)
    */
-  async bulkUpdateStatus(rcNumbers, status, remarks = null, userId = 1, fy = null, mm = null) {
+  async bulkUpdateStatus(rcNumbers, status, remarks = null, userId = 1, fy = null, mm = null, requestBody = {}) {
     const client = await db.pool.connect();
     let statusWhereClause = `wf_status = 'SCRUTINY_PENDING'`;
     if(status === 'APPROVED' || status === 'REJECTED'){
@@ -869,6 +869,174 @@ class APLWipService {
       client.release();
     }
   }
-}
 
+
+  /**
+   * Bulk update WIP status (for DFSO approve/reject operations)
+   */
+  async updateRftStatusO(rcNumbers, status, remarks = null, userId = 1, fy = null, mm = null, requestBody = {}) {
+    const client = await db.pool.connect();
+    let statusWhereClause = `wf_status = 'SCRUTINY_PENDING'`;
+    if(status === 'APPROVED' || status === 'REJECTED'){
+     statusWhereClause = `wf_status = 'SCRUTINY_PENDING'`;
+    }
+    if(status === 'BILL_GENERATED'){
+      statusWhereClause = `wf_status = 'APPROVED'`;
+    }
+
+    if(status === 'DISBURSED'){
+      statusWhereClause = `wf_status = 'BILL_GENERATED'`;
+    }
+    
+    if(fy && mm){
+      statusWhereClause += ` AND fy = '${fy}' AND mm = ${mm}`;
+    }
+    try {
+      await client.query('BEGIN');
+
+      const updatedRecords = [];
+
+      // Update all records for the given RC numbers
+      for (const rcNo of rcNumbers) {
+        const query = `
+          UPDATE ${tables.APL_WIP}
+          SET wf_status = $1,
+              updated_by = $2,
+              updated_at = CURRENT_TIMESTAMP,
+              remarks = $3
+          WHERE rc_no = $4
+            AND ${statusWhereClause}
+          RETURNING *
+        `;
+
+        const params = [status, userId, remarks, rcNo];
+        const result = await client.query(query, params);
+        updatedRecords.push(...result.rows);
+      }
+
+      await client.query('COMMIT');
+
+      return {
+        success: true,
+        count: updatedRecords.length,
+        data: updatedRecords
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+
+
+async updateRftStatus(rcNumbers, status, remarks = null, userId = 1, fy = null, mm = null, requestBody = {}) {
+    const client = await db.pool.connect();
+
+    // Status where clause
+    let statusWhereClause = `wf_status = 'SCRUTINY_PENDING'`;
+    if (status === 'RFT_GENERATED') statusWhereClause = `wf_status = 'APPROVED'`;
+    if (status === 'BILL_GENERATED') statusWhereClause = `wf_status = 'APPROVED'`;
+    if (status === 'DISBURSED')      statusWhereClause = `wf_status = 'RFT_GENERATED'`;
+
+    if (fy && mm) {
+      statusWhereClause += ` AND fy = '${fy}' AND mm = ${mm}`;
+    }
+
+    // ── Dynamic column builder ──────────────────────────────────────────
+    const buildUpdate = (table, updates, extraWhere, extraParams = []) => {
+      const fields = [];
+      const params = [];
+      let i = 1;
+
+      for (const [col, val] of Object.entries(updates)) {
+        if (val !== undefined) {
+          fields.push(`${col} = $${i++}`);
+          params.push(val);
+        }
+      }
+
+      // rc_no array param
+      params.push(rcNumbers);
+      const rcParam = i++;
+
+      // extra params (e.g. fy, mm if needed)
+      extraParams.forEach(p => params.push(p));
+
+      const query = `
+        UPDATE ${table}
+        SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP
+        WHERE rc_no = ANY($${rcParam}::text[])
+          AND ${extraWhere}
+        RETURNING *
+      `;
+
+      return { query, params };
+    };
+
+    try {
+      await client.query('BEGIN');
+
+      // ── Table 1: APL_WIP ───────────────────────────────────────────────
+      const wipUpdates = {
+        wf_status:  status,
+        updated_by: userId,
+        is_rft_generated: requestBody.is_rft_generated,
+        rft_no: requestBody.rft_no,
+        rft_date:requestBody.rft_date,
+        rft_generated_by:requestBody.rft_generated_by,
+      };
+
+      const { query: wipQuery, params: wipParams } = buildUpdate(
+        tables.APL_WIP,
+        wipUpdates,
+        statusWhereClause
+      );
+
+      const wipResult = await client.query(wipQuery, wipParams);
+
+      if (wipResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return { success: false, message: 'No matching records found in APL_WIP' };
+      }
+
+      // ── Table 2: APL_RFT (or your second table) ────────────────────────
+      const rftUpdates = {
+        rft_status:  requestBody.status,
+        rft_no:            requestBody.rft_no,
+        rft_date:          requestBody.rft_date,
+        rft_generated_by:  requestBody.rft_generated_by,
+        updated_by:        requestBody.userId,
+      };
+
+      const { query: rftQuery, params: rftParams } = buildUpdate(
+        tables.APL_ALLOTMENT_DETAIL,         // 👈 replace with your second table
+        rftUpdates,
+        `bill_no = ${requestBody.bill_no}`         // 👈 replace with your second table's where clause
+      );
+
+      const rftResult = await client.query(rftQuery, rftParams);
+
+      if (rftResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return { success: false, message: 'No matching records found in APL_RFT' };
+      }
+
+      await client.query('COMMIT');
+
+      return {
+        success: true,
+        count: wipResult.rowCount,
+        data: wipResult.rows
+      };
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+}
 module.exports = new APLWipService();

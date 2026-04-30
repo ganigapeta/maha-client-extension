@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getObjectName } from '../../api/fetch-scheme';
 import { apiService } from '../../api/external-api';
+import { getLiferayUserId } from '../../config';
 
 const APLBillSubmission = ({ apiRes, submittedBillList, setResponseData, setSubmittedBillList, generateRftOnly, billRowData, searchData, searchResults }) => {  const [isAgreed, setIsAgreed] = useState(false);
   const [pdfMakeLoaded, setPdfMakeLoaded] = useState(false);
@@ -133,10 +134,6 @@ const signingRowData = {
 
     const handleSubmit = async () => {
 
-      if(true){
-        handleUpdateExternalBill();
-        return
-      }
   if (!isAgreed) {
     alert("Please agree to the terms and conditions before submitting.");
     return;
@@ -147,6 +144,8 @@ const signingRowData = {
   try {
 if (isSnoRole) {
   await generateRftOnly(signingRowData);
+  await handleUpdateExternalBill();
+
   setSubmittedBillList([]);
 } else {
       // Regular DDO — directly mark as Completed
@@ -190,20 +189,27 @@ if (isSnoRole) {
 
       const payload = {
         rc_numbers: rcNumbers,
-        status: 'BILL_GENERATED',
+        is_rft_generated: true,
+        rft_no: billDetails.billNumber,
+        rft_date:new Date().toISOString().split('T')[0],
+        rft_generated_by: getLiferayUserId(),
         fy: searchData?.financialYear,
         installment: searchData?.installment,
         fpsCode: searchData?.fpsCode,
+        bill_no: billDetails.billNumber,
+        userId: getLiferayUserId(),
+        status: "RFT_GENERATED"
       };
-  
+
       console.log('SNO - Bill Payload:', JSON.stringify(payload, null, 2));
   
       try {
-        const response = await apiService.updateWIPDataStatus(payload);
+        const response = await apiService.updateRFTStatus(payload);
         console.log('Bill Submit response:', response);
         
       } catch (error) {
         console.error('Error submitting bill:', error);
+        throw error; // Rethrow to be caught in handleSubmit
       
       }
     };
@@ -451,7 +457,7 @@ if (isSnoRole) {
   onClick={handleSubmit}
   disabled={billDetails.allocatedAmount === 0 || !isAgreed}
 >
-  Submit Bill
+  Generate RFT
 </button>
         </div>
       </div>

@@ -292,8 +292,28 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
           const row = {
             "S.No": index + 1,
-            "District": item?.dist_name || "",
-            "Amount (₹)": `₹ ${formatAmountIndian(item.amount)}`,
+            "District Name": item?.dist_name || "",
+            "DFSO Office": item?.dfso_name || "",
+            "AFSO Office": item?.afso_name || "",
+            "FPS Name": item?.fps_name || "",
+            "RC Type": item?.rc_type || "",
+            "RC Number": item?.rc_no || "",
+            "HOF Name": item?.hof_name || "",
+            "Member Name": item?.member_name || "",
+            "Member ID": item?.member_id || "",
+            "Gender": item?.gender || "",
+            "Relationship with HOF": item?.relation || "",
+            "Date of Birth": item?.dob ? formatDate(item.dob) : "",
+            "Age": item?.age || "",
+            "Aadhaar No.": item?.masked_aadhaar_no || "",
+            "Demographic Authentication Completed": item?.demo_auth || "",
+            "EKYC Status": item?.ekyc || "",
+            "Aadhaar Linked Bank Account Available?":
+              item?.is_aadhaar_linked_account ? "Yes" : "No",
+            "Total Family Member": item?.member_count || "",
+            "Total Benefit Amount (₹)": item?.amount
+              ? `₹ ${formatAmountIndian(item.amount)}`
+              : "",
           };
 
           return row;
@@ -316,91 +336,132 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
   // Handle PDF Download
   const handleDownloadPDF = async () => {
-    setIsDownloading(true);
-    try {
-      // Simulate a small delay to show loading state (optional)
-      await new Promise(resolve => setTimeout(resolve, 500));
-      // Header row with all columns
-      const tableHeader = [
-        { text: "Sr.No.", style: "th", alignment: "center" },
-        { text: "District", style: "th", alignment: "center" },
-        { text: "Amount (₹)", style: "th", alignment: "center" },
-      ];
+  setIsDownloading(true);
+  try {
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Data rows
-      const tableRows = backupSearchData.map((item, index) => [
-        { text: String(index + 1), style: "td", alignment: "center" },
-        { text: item.dist_name || "", style: "td", alignment: "center" },
-        { text: `₹ ${formatAmountIndian(item.amount)}`, style: "td", alignment: "right" },
-      ]);
+    const tableHeader = [
+      { text: "S.No.", style: "th", alignment: "center" },
+      { text: "District Name", style: "th", alignment: "center" },
+      { text: "DFSO Office", style: "th", alignment: "center" },
+      { text: "AFSO Office", style: "th", alignment: "center" },
+      { text: "FPS Name", style: "th", alignment: "center" },
+      { text: "RC Type", style: "th", alignment: "center" },
+      { text: "RC Number", style: "th", alignment: "center" },
+      { text: "HOF Name", style: "th", alignment: "center" },
+      { text: "Member Name", style: "th", alignment: "center" },
+      { text: "Member ID", style: "th", alignment: "center" },
+      { text: "Gender", style: "th", alignment: "center" },
+      { text: "Relationship with HOF", style: "th", alignment: "center" },
+      { text: "Date of Birth", style: "th", alignment: "center" },
+      { text: "Age", style: "th", alignment: "center" },
+      { text: "Aadhaar No.", style: "th", alignment: "center" },
+      { text: "Demographic Authentication Completed", style: "th", alignment: "center" },
+      { text: "EKYC Status", style: "th", alignment: "center" },
+      { text: "Aadhaar Linked Bank Account Available?", style: "th", alignment: "center" },
+      { text: "Total Family Member", style: "th", alignment: "center" },
+      { text: "Total Benefit Amount (₹)", style: "th", alignment: "center" },
+    ];
 
-      const totalRow = [
-        { },
-        {}, {},
-      ];
+    const tableRows = backupSearchData.map((item, index) => [
+      { text: String(index + 1), style: "td", alignment: "center" },
+      { text: String(item?.dist_name || ""), style: "td", alignment: "left" },
+      { text: String(item?.dfso_name || ""), style: "td", alignment: "left" },
+      { text: String(item?.afso_name || ""), style: "td", alignment: "left" },
+      { text: String(item?.fps_name || ""), style: "td", alignment: "left" },
+      { text: String(item?.rc_type || ""), style: "td", alignment: "center" },
+      { text: String(item?.rc_no || ""), style: "td", alignment: "center" },
+      { text: String(item?.hof_name || ""), style: "td", alignment: "left" },
+      { text: String(item?.member_name || ""), style: "td", alignment: "left" },
+      { text: String(item?.member_id || ""), style: "td", alignment: "center" },
+      { text: String(item?.gender || ""), style: "td", alignment: "center" },
+      { text: String(item?.relation || ""), style: "td", alignment: "center" },
+      { text: item?.dob ? formatDate(item.dob) : "", style: "td", alignment: "center" },
+      { text: String(item?.age ?? ""), style: "td", alignment: "center" },
+      { text: String(item?.masked_aadhaar_no || ""), style: "td", alignment: "center" },
+      { text: String(item?.demo_auth || ""), style: "td", alignment: "center" },
+      { text: String(item?.ekyc || ""), style: "td", alignment: "center" },
+      { text: item?.is_aadhaar_linked_account ? "Yes" : "No", style: "td", alignment: "center" },
+      { text: String(item?.member_count ?? ""), style: "td", alignment: "center" },
+      { text: item?.amount ? `₹ ${formatAmountIndian(item.amount)}` : "", style: "td", alignment: "right" },
+    ]);
 
-      const dd = {
-        pageSize: "A4",
-        pageOrientation: "landscape",
-        pageMargins: [28, 28, 28, 28],
+    const dd = {
+      pageSize: "A3",           // ← A3 gives more width for 20 columns
+      pageOrientation: "landscape",
+      pageMargins: [20, 20, 20, 20],
 
-        content: [
-          {
-            text: "Beneficiary Detail",
-            style: "pageTitle",
-            alignment: "center",
-            margin: [0, 0, 0, 10],
-          },
-          {
-            columns: [
-              { width: "*", text: "" },
-              {
-                width: "auto",
-                table: {
-                  headerRows: 1,
-                  widths: [25, 100, 120],  // ← use dynamic widths
-                  body: [tableHeader].concat(tableRows).concat([totalRow]),
-                },
-                layout: {
-                  hLineWidth: function () { return 0.6; },
-                  vLineWidth: function () { return 0.6; },
-                  hLineColor: function () { return "#aaaaaa"; },
-                  vLineColor: function () { return "#aaaaaa"; },
-                  fillColor: function (rowIndex) {
-                    if (rowIndex === 0) return "#dce6f1";
-                    return (rowIndex % 2 === 0) ? "#f5f7fb" : null;
-                  },
-                  paddingLeft: function () { return 4; },
-                  paddingRight: function () { return 4; },
-                  paddingTop: function () { return 4; },
-                  paddingBottom: function () { return 4; },
-                },
-              },
-              { width: "*", text: "" },
-            ],
-          },
-        ],
-
-        styles: {
-          pageTitle: { fontSize: 13, bold: true, font: "Roboto", color: "#1a237e" },
-          th: { fontSize: 8, bold: true, font: "Roboto" },
-          td: { fontSize: 8, bold: false, font: "Roboto" },
+      content: [
+        {
+          text: "Beneficiary Detail",
+          style: "pageTitle",
+          alignment: "center",
+          margin: [0, 0, 0, 10],
         },
+        {
+          table: {
+            headerRows: 1,
+            widths: [   // ← Exactly 20 widths matching 20 columns
+              18,   // S.No.
+              55,   // District Name
+              80,   // DFSO Office
+              70,   // AFSO Office
+              55,   // FPS Name
+              28,   // RC Type
+              60,   // RC Number
+              70,   // HOF Name
+              70,   // Member Name
+              65,   // Member ID
+              25,   // Gender
+              45,   // Relationship with HOF
+              40,   // Date of Birth
+              18,   // Age
+              55,   // Aadhaar No.
+              40,   // Demographic Auth
+              30,   // EKYC Status
+              40,   // Aadhaar Linked
+              30,   // Total Family Member
+              45,   // Total Benefit Amount
+            ],
+            body: [tableHeader, ...tableRows],  // ← clean spread, no totalRow
+          },
+          layout: {
+            hLineWidth: () => 0.6,
+            vLineWidth: () => 0.6,
+            hLineColor: () => "#aaaaaa",
+            vLineColor: () => "#aaaaaa",
+            fillColor: (rowIndex) => {
+              if (rowIndex === 0) return "#dce6f1";
+              return rowIndex % 2 === 0 ? "#f5f7fb" : null;
+            },
+            paddingLeft: () => 3,
+            paddingRight: () => 3,
+            paddingTop: () => 3,
+            paddingBottom: () => 3,
+          },
+        },
+      ],
 
-        defaultStyle: { font: "Roboto", fontSize: 8 },
-      };
+      styles: {
+        pageTitle: { fontSize: 13, bold: true, font: "Roboto", color: "#1a237e" },
+        th: { fontSize: 7, bold: true, font: "Roboto" },
+        td: { fontSize: 7, bold: false, font: "Roboto" },
+      },
 
-      window.pdfMake.createPdf(dd).download("Beneficiary_Detail.pdf");
+      defaultStyle: { font: "Roboto", fontSize: 7 },
+    };
 
-    } catch (error) {
-      console.error("Error preparing data for PDF export:", error);
-      alert("An error occurred while preparing the PDF file. Please try again.");
-      setIsDownloading(false);
-      return;
-    } finally {
-      setIsDownloading(false);
-    }
-  };
+    window.pdfMake.createPdf(dd).download("Beneficiary_Detail.pdf");
+
+  } catch (error) {
+    console.error("Error preparing data for PDF export:", error);
+    alert("An error occurred while preparing the PDF file. Please try again.");
+    setIsDownloading(false);
+    return;
+  } finally {
+    setIsDownloading(false);
+  }
+};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

@@ -348,13 +348,73 @@ async function aplWipRoutes(fastify, options) {
       }
       
       const userId = request.headers['x-user-id'] || 1;
-      const result = await aplWipService.bulkUpdateStatus(rc_numbers, status, remarks, userId, fy, mm);
+      const result = await aplWipService.bulkUpdateStatus(rc_numbers, status, remarks, userId, fy, mm, request.body);
       
       return reply.send(successResponse(
         result.data,
         `Successfully updated ${result.count} record(s) to ${status}`,
         { count: result.count }
       ));
+    } catch (error) {
+      return reply.status(500).send(databaseErrorResponse(error));
+    }
+  });
+
+
+  // Bulk update WIP status (for DFSO approve/reject)
+  fastify.post('/rft-update', {
+    schema: {
+      description: 'Bulk update WIP record status (APPROVE or REJECT)',
+      tags: ['APL WIP'],
+      body: {
+        type: 'object',
+        required: ['rc_numbers', 'status'],
+        properties: {
+          rc_numbers: { 
+            type: 'array', 
+            items: { type: 'integer' },
+            description: 'Array of RC numbers to update'
+          },
+          bill_no: { 
+            type: 'string', 
+            items: { type: 'string' },
+            description: 'Bill Number'
+          },
+          status: { 
+            type: 'string', 
+            enum: ['APPROVED', 'REJECTED', 'ALLOTED', 'BILL_GENERATED', 'DISBURSED', 'RFT_GENERATED'],
+            description: 'New status for the records'
+          },
+          fy: { type: 'string', description: 'Financial Year (e.g., 2023-2024) - informational only' },
+          mm: { type: 'integer', minimum: 1, maximum: 12, description: 'Month number (1-12) - informational only' },
+          remarks: { 
+            type: 'string',
+            description: 'Optional remarks (required for REJECTED status)'
+          }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    try {
+      const { rc_numbers, status, remarks, fy, mm } = request.body;
+      
+      // Validate remarks for REJECTED status
+      if (status === 'REJECTED' && !remarks) {
+        return reply.status(400).send(validationErrorResponse('Remarks are required when rejecting records'));
+      }
+      
+      const userId = request.headers['x-user-id'] || request?.body?.userId || 1;
+      const result = await aplWipService.updateRftStatus(rc_numbers, status, remarks, userId, fy, mm, request.body);
+      
+      if(result.success){
+        return reply.send(successResponse(
+          result.data,
+          `Successfully updated ${result.count} record(s) to ${status}`,
+          { count: result.count }
+        ));
+      } else {
+        return reply.status(400).send(validationErrorResponse(result.message));
+      }
     } catch (error) {
       return reply.status(500).send(databaseErrorResponse(error));
     }

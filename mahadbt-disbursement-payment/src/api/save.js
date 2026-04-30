@@ -86,7 +86,7 @@ export async function saveSelectedBeneficiarie(
 export async function getBills(ddoUserId) {
   try {
     const response = await fetch(
-      `/o/c/billmanagements?filter=ddoUserId eq '${ddoUserId}'&pageSize=200&sort=dateCreated:desc`,
+      `/o/c/billmanagements?filter=ddoUserId eq '${ddoUserId}'&pageSize=1&sort=dateCreated:desc`,
 
       {
         method: "GET",

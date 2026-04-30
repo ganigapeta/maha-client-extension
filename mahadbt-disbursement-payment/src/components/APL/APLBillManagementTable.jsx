@@ -7,7 +7,7 @@ import jsPDF from 'jspdf';
 // Import pdfmake
 import pdfMake from 'pdfmake/build/pdfmake.min';
 import pdfMakeVfs from 'pdfmake/build/vfs_fonts';
-import { buildCreds, buildHeadersDocument, getLiferayUserId, getScopeGroupId } from '../../config';
+import { buildCreds, buildHeaders, buildHeadersDocument, getLiferayUserId, getScopeGroupId } from '../../config';
 
 // Setup pdfmake with fonts
 pdfMake.vfs = pdfMakeVfs;
@@ -31,8 +31,10 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPageState, setEntriesPerPageState] = useState(10);
+  const [isAPLSNO, setAPLSNO] = useState(true);
 
-  const SNO_ROLES = ["pension sno", "assistance sno", "stipend sno", "pre matric sno"];
+
+  const SNO_ROLES = ["pension sno", "assistance sno", "stipend sno", "pre matric sno", "apl sno"];
 
   const roleNames =
     apiRes?.userRoles?.map(role => (role?.name || role || "").toString().toLowerCase().trim()) || [];
@@ -1694,13 +1696,8 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
 
         const patchRes = await fetch(`/o/c/billmanagements/${rowData.id}`, {
           method: "PATCH",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "x-csrf-token": window.Liferay?.authToken || "",
-            // Authorization: "Basic " + btoa("prabhudasu:root"),
-          },
-          credentials: "include",
+          headers: buildHeaders(),
+          credentials: buildCreds(),
           body: JSON.stringify({
             beamsPdfUrl: downloadUrl,
             beamsPdfId: fileEntryId,
@@ -1847,23 +1844,28 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
         </div>
       )}
 
-      <div className="table-responsive" style={{ overflowX: 'auto' }}>
-        <table className="table table-bordered table-striped table-hover" style={{ minWidth: '1400px' }}>
+      <div className="table-responsive" style={{ overflowX: "auto" }}>
+        <table
+          className="table table-bordered table-striped table-hover"
+          style={{ minWidth: "1400px" }}
+        >
           <thead className="table-primary">
             <tr>
-              <th>Bill Number</th>
+              <th>Bill/RFT Number</th>
               <th>Scheme Code</th>
               {!isPensionRole && <th>DDO Code</th>}
+              <th>Financial Year</th>
+              <th>Installment Month</th>
               <th>Beneficiary Allocated Count</th>
               <th>Allocated Amount</th>
-              <th>Bill Generation Status</th>
+              <th>Bill/RFT Generation Status</th>
               {!isPensionRole && <th>BEAMS</th>}
-              <th>Cancel Bill</th>
+              {!isAPLSNO && <th>Cancel Bill</th>}
               {!isPensionRole && <th>Payment Authorization Letter</th>}
-              <th>Bill Covering Letter</th>
-              <th>MTR</th>
-              <th>Beneficiary List Export</th>
-              <th>Covering Letter</th>
+              {isAPLSNO && <th>RFT Document</th>}
+              {!isAPLSNO && <th>MTR</th>}
+              {!isAPLSNO && <th>Beneficiary List Export</th>}
+              {!isAPLSNO && <th>Covering Letter</th>}
             </tr>
           </thead>
           <tbody>
@@ -1871,55 +1873,98 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
               currentEntries.map((item, index) => (
                 <tr key={index}>
                   <td className="fw-bold">{item.billNumber}</td>
-                  <td>{apiRes?.ddoRecord?.integrationSchemeCode || item.schemeCode}</td>
+                  <td>
+                    {apiRes?.ddoRecord?.integrationSchemeCode ||
+                      item.schemeCode}
+                  </td>
                   {!isPensionRole && <td>{item.ddoCode}</td>}
+
+                  <td className="text-center">{searchData?.financialYear}</td>
+                  <td className="text-center">{searchData?.installment}</td>
+
                   <td className="text-center">{item.beneficiaryCount}</td>
-                  <td className="text-end">{formatCurrency(item.allocatedAmount)}</td>
+                  <td className="text-end">
+                    {formatCurrency(item.allocatedAmount)}
+                  </td>
                   <td>
                     <span className="fw-bold">
-                      {item.submittedStatus === "Pending" ? "Pending" : "Completed"}
+                      {item.submittedStatus === "Pending"
+                        ? "Pending"
+                        : "Completed"}
                     </span>
                   </td>
                   {!isPensionRole && (
                     <td>
-                      {item.submittedStatus === "Pending" && !item.beamsPdfUrl ? (
-                        <button className="btn btn-sm btn-primary" onClick={() => handleSubmitBill(item)}>
+                      {item.submittedStatus === "Pending" &&
+                      !item.beamsPdfUrl ? (
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleSubmitBill(item)}
+                        >
                           Submit Bill
                         </button>
-                      ) : ""}
+                      ) : (
+                        ""
+                      )}
                     </td>
                   )}
-                  <td>
-                    <button
-                      className="btn btn-sm btn-link text-danger p-0"
-                      onClick={() => handleCancelBill(item)}
-                    >
-                      Cancel
-                    </button>
-                  </td>
+                  {!isAPLSNO && (
+                    <td>
+                      <button
+                        className="btn btn-sm btn-link text-danger p-0"
+                        onClick={() => handleCancelBill(item)}
+                      >
+                        Cancel
+                      </button>
+                    </td>
+                  )}
                   {!isPensionRole && (
                     <td className="text-center">
                       {item.beamsPdfUrl ? (
-                        <a href={item.beamsPdfUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary" download>
+                        <a
+                          href={item.beamsPdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-sm btn-primary"
+                          download
+                        >
                           Download
                         </a>
-                      ) : "-"}
+                      ) : (
+                        "-"
+                      )}
                     </td>
                   )}
-                  <td className="text-center">
-                    {item.submittedStatus !== "Pending" ? (
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={() => handleDownloadLetter(item)}
-                        disabled={generatingBillId === item.id}
-                      >
-                        {generatingBillId === item.id ? "Generating..." : "Download Letter"}
-                      </button>
-                    ) : "-"}
-                  </td>
-                  <td className="text-center">{item.mtr || "-"}</td>
-                  <td className="text-center">{item.beneficiaryListExport || "-"}</td>
-                  <td className="text-center">{item.coveringLetter || "-"}</td>
+                  {isAPLSNO && (
+                    <td className="text-center">
+                      {item.submittedStatus !== "Pending" ? (
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleDownloadLetter(item)}
+                          disabled={generatingBillId === item.id}
+                        >
+                          {generatingBillId === item.id
+                            ? "Generating..."
+                            : "Download Letter"}
+                        </button>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                  )}
+                  {!isAPLSNO && (
+                    <td className="text-center">{item.mtr || "-"}</td>
+                  )}
+                  {!isAPLSNO && (
+                    <td className="text-center">
+                      {item.beneficiaryListExport || "-"}
+                    </td>
+                  )}
+                  {!isAPLSNO && (
+                    <td className="text-center">
+                      {item.coveringLetter || "-"}
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
@@ -1937,21 +1982,41 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
       {tableData.length > 0 && (
         <div className="row mt-3">
           <div className="col-md-6">
-            <p>Showing {indexOfFirstEntry + 1} to {Math.min(indexOfLastEntry, tableData.length)} of {tableData.length} entries</p>
+            <p>
+              Showing {indexOfFirstEntry + 1} to{" "}
+              {Math.min(indexOfLastEntry, tableData.length)} of{" "}
+              {tableData.length} entries
+            </p>
           </div>
           <div className="col-md-6">
             <nav>
               <ul className="pagination justify-content-end">
-                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                  <button className="page-link" onClick={prevPage}>Previous</button>
+                <li
+                  className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+                >
+                  <button className="page-link" onClick={prevPage}>
+                    Previous
+                  </button>
                 </li>
-                {pageNumbers.map(number => (
-                  <li key={number} className={`page-item ${currentPage === number ? "active" : ""}`}>
-                    <button onClick={() => paginate(number)} className="page-link">{number}</button>
+                {pageNumbers.map((number) => (
+                  <li
+                    key={number}
+                    className={`page-item ${currentPage === number ? "active" : ""}`}
+                  >
+                    <button
+                      onClick={() => paginate(number)}
+                      className="page-link"
+                    >
+                      {number}
+                    </button>
                   </li>
                 ))}
-                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                  <button className="page-link" onClick={nextPage}>Next</button>
+                <li
+                  className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}
+                >
+                  <button className="page-link" onClick={nextPage}>
+                    Next
+                  </button>
                 </li>
               </ul>
             </nav>
@@ -1961,7 +2026,6 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
 
       {/* {billGeneratedBillInfo.allotment_id && ( */}
       {submittedBillList.length > 0 && (
-
         <APLBillSubmission
           searchData={searchData}
           apiRes={apiRes}
@@ -1974,18 +2038,30 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
         />
       )}
       {showPasswordModal && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '400px' }}>
+        <div
+          className="modal fade show"
+          style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+          tabIndex="-1"
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            style={{ maxWidth: "400px" }}
+          >
             <div className="modal-content">
-              <div className="modal-header" style={{ backgroundColor: '#1a237e' }}>
-                <h5 className="modal-title text-white fw-bold">Generate Digital Signature</h5>
+              <div
+                className="modal-header"
+                style={{ backgroundColor: "#1a237e" }}
+              >
+                <h5 className="modal-title text-white fw-bold">
+                  Generate Digital Signature
+                </h5>
                 <button
                   type="button"
                   className="btn-close btn-close-white"
                   onClick={() => {
                     setShowPasswordModal(false);
-                    setPfxPassword('');
-                    setPasswordError('');
+                    setPfxPassword("");
+                    setPasswordError("");
                   }}
                 />
               </div>
@@ -1993,12 +2069,12 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
                 <label className="form-label fw-bold">Enter password</label>
                 <div className="input-group">
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     className="form-control"
                     value={pfxPassword}
                     onChange={(e) => {
                       setPfxPassword(e.target.value);
-                      setPasswordError('');
+                      setPasswordError("");
                     }}
                     placeholder="Enter password"
                   />
@@ -2007,7 +2083,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? 'Hide' : 'Show'}
+                    {showPassword ? "Hide" : "Show"}
                   </button>
                 </div>
                 {passwordError && (
@@ -2019,15 +2095,15 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
                   className="btn btn-outline-secondary"
                   onClick={() => {
                     setShowPasswordModal(false);
-                    setPfxPassword('');
-                    setPasswordError('');
+                    setPfxPassword("");
+                    setPasswordError("");
                   }}
                 >
                   Cancel
                 </button>
                 <button
                   className="btn btn-primary"
-                  style={{ backgroundColor: '#1a237e', borderColor: '#1a237e' }}
+                  style={{ backgroundColor: "#1a237e", borderColor: "#1a237e" }}
                   onClick={handlePasswordConfirm}
                 >
                   Confirm
