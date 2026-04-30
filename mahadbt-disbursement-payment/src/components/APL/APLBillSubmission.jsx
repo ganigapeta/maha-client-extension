@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getObjectName } from '../../api/fetch-scheme';
+import { apiService } from '../../api/external-api';
 
-const APLBillSubmission = ({ apiRes, submittedBillList, setResponseData, setSubmittedBillList, generateRftOnly, billRowData, searchData }) => {  const [isAgreed, setIsAgreed] = useState(false);
+const APLBillSubmission = ({ apiRes, submittedBillList, setResponseData, setSubmittedBillList, generateRftOnly, billRowData, searchData, searchResults }) => {  const [isAgreed, setIsAgreed] = useState(false);
   const [pdfMakeLoaded, setPdfMakeLoaded] = useState(false);
   const [beneficiaryList, setBeneficiaryList] = useState([]); // State for beneficiary data
   const [loadingBeneficiaries, setLoadingBeneficiaries] = useState(true);
@@ -14,9 +15,11 @@ const APLBillSubmission = ({ apiRes, submittedBillList, setResponseData, setSubm
     ddoCode: apiRes?.ddoRecord?.dDOCode || 'N/A',
     schemeCode: searchData.schemeName || 'N/A',
     billNumber: billRowData?.bill_no || 'N/A',
-    allocatedBeneficiary: billRowData?.member_name || 'N/A',
-    allocatedAmount: billRowData?.amount
+    allocatedBeneficiary: billRowData?.totalFamilies || 'N/A',
+    allocatedAmount: billRowData?.totalAmount
   };
+
+  console.log("billDetails::::", billDetails, "  apiRes::::", apiRes, "  billRowData::::", billRowData);
 
 const signingRowData = {
   id: billRowData?.dataId || null,
@@ -129,6 +132,11 @@ const signingRowData = {
   
 
     const handleSubmit = async () => {
+
+      if(true){
+        handleUpdateExternalBill();
+        return
+      }
   if (!isAgreed) {
     alert("Please agree to the terms and conditions before submitting.");
     return;
@@ -174,6 +182,32 @@ if (isSnoRole) {
     alert("Failed to submit bill.");
   }
 };
+
+  const handleUpdateExternalBill = async () => {
+
+
+      const rcNumbers = searchResults?.families?.map(family => family?.rc_no);
+
+      const payload = {
+        rc_numbers: rcNumbers,
+        status: 'BILL_GENERATED',
+        fy: searchData?.financialYear,
+        installment: searchData?.installment,
+        fpsCode: searchData?.fpsCode,
+      };
+  
+      console.log('SNO - Bill Payload:', JSON.stringify(payload, null, 2));
+  
+      try {
+        const response = await apiService.updateWIPDataStatus(payload);
+        console.log('Bill Submit response:', response);
+        
+      } catch (error) {
+        console.error('Error submitting bill:', error);
+      
+      }
+    };
+
 
   const generatePDF = async () => {
     // Set downloading state to true
@@ -389,69 +423,6 @@ if (isSnoRole) {
           </table>
         </div>
 
-        {/* Beneficiary List with Download Button */}
-        <div className="mt-4">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h6 className="fw-bold mb-0">Beneficiary List ({beneficiaryList.length} records)</h6>
-            <button
-              type="button"
-              className="btn btn-outline-primary btn-sm"
-              onClick={generatePDF}
-              disabled={beneficiaryList.length === 0 || loadingBeneficiaries || isDownloading}
-            >
-              {isDownloading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                  Generating PDF...
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-download me-1"></i>
-                  Download PDF
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Loading state */}
-          {loadingBeneficiaries ? (
-            <div className="alert alert-info">
-              Loading beneficiary data...
-            </div>
-          ) : beneficiaryList.length === 0 ? (
-            <div className="alert alert-info">
-              No beneficiary data available.
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-sm table-bordered">
-                <thead>
-                  <tr>
-                    <th>Sr. No.</th>
-                    <th>Application No</th>
-                    <th>Applicant Name</th>
-                    <th>Allocated Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {beneficiaryList.slice(0, 5).map((item) => (
-                    <tr key={item.srNo}>
-                      <td>{item.srNo}</td>
-                      <td>{item.applicationNo}</td>
-                      <td>{item.applicantName}</td>
-                      <td className="text-end">{formatAmount(item.allocatedAmount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {beneficiaryList.length > 5 && (
-                <div className="text-muted small">
-                  Showing first 5 of {beneficiaryList.length} beneficiaries. Download PDF for complete list.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
 
         {/* Verification Message */}
         <div className="alert alert-light border mt-3">

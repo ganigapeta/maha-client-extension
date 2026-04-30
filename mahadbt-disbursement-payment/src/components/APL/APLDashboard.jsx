@@ -66,9 +66,9 @@ function APLDashboard({
       const schemes = await fetchSchemeNameByRole(roleNames);
       if (schemes.length === 0) {
         schemes.push({ 
-          id: '179438_179438',
+          id: '179438_179411',
           name: 'Above Poverty Line (APL) Scheme',
-          schemeCode: 'PEN-SJSA-SGNY-2-26-023',
+          schemeCode: 'FACS-FACS-APL-2-26-003',
           benefitsJsonData: ''
         });
       }
@@ -142,7 +142,7 @@ function APLDashboard({
     <>
       <div className="card">
         <div className="card-header">
-          <h5 className="mb-0 fw-bold">Pension Beneficiary List</h5>
+          <h5 className="mb-0 fw-bold">APL Beneficiary List</h5>
         </div>
 
         <div className="card-body">

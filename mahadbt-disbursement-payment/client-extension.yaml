@@ -1,13 +1,13 @@
 assemble:
     - from: build/static
       into: static
-mahadbt-disbursement-payment:
+mahadbt-disbursement-payment-apl:
     cssURLs:
         - css/main.*.css
-    friendlyURLMapping: mahadbt-disbursement-payment
-    htmlElementName: mahadbt-disbursement-payment
+    friendlyURLMapping: mahadbt-disbursement-payment-apl
+    htmlElementName: mahadbt-disbursement-payment-apl
     instanceable: false
-    name: mahadbt-disbursement-payment
+    name: mahadbt-disbursement-payment-apl
     portletCategoryName: category.client-extensions
     type: customElement
     urls:

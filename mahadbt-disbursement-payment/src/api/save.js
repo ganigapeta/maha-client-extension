@@ -1,4 +1,5 @@
 import forge from "node-forge";
+import { buildCreds, buildHeaders } from "../config";
 
 export async function saveSelectedBeneficiarie(
   selectedBeneficiaries,
@@ -19,12 +20,8 @@ export async function saveSelectedBeneficiarie(
     const existingCheck = await fetch(
       `/o/c/billmanagements?filter=billNumber eq '${selectedBeneficiaries[0].batchID}'`,
       {
-        headers: {
-          Accept: "application/json",
-          // "x-csrf-token": window.Liferay?.authToken || "",
-          Authorization: "Basic " + btoa("prabhudasu:root"),
-        },
-        credentials: "include",
+         headers: buildHeaders(),
+         credentials: buildCreds(),
       },
     );
     const existingData = await existingCheck.json();
@@ -40,12 +37,8 @@ export async function saveSelectedBeneficiarie(
         const ddoMappingRes = await fetch(
           `/o/c/ddoschememappings?filter=r_schemeMapping_c_schemeConfiguratorId eq '${apiRes.schemeData.id}'`,
           {
-            headers: {
-              Accept: "application/json",
-              // "x-csrf-token": window.Liferay?.authToken || "",
-              Authorization: "Basic " + btoa("prabhudasu:root"),
-            },
-            credentials: "include",
+            headers: buildHeaders(),
+            credentials: buildCreds(),
           },
         );
         const ddoMappingData = await ddoMappingRes.json();
@@ -69,13 +62,8 @@ export async function saveSelectedBeneficiarie(
 
     const response = await fetch(`/o/c/billmanagements`, {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        // "x-csrf-token": window.Liferay?.authToken || "",
-        Authorization: "Basic " + btoa("prabhudasu:root"),
-      },
-      credentials: "include",
+      headers: buildHeaders(),
+      credentials: buildCreds(),
       body: JSON.stringify(payload),
     });
 
@@ -102,13 +90,8 @@ export async function getBills(ddoUserId) {
 
       {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          // "x-csrf-token": window.Liferay?.authToken || "",
-          Authorization: "Basic " + btoa("prabhudasu:root"),
-        },
-        credentials: "include",
+        headers: buildHeaders(),
+        credentials: buildCreds(),
       },
     );
 

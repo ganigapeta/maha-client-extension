@@ -1,15 +1,5 @@
+import { buildCreds, buildHeaders } from "../config";
 
-const buildHeaders = () => ({
-  Accept: "application/json",
-  "Content-Type": "application/json",
-  Authorization: "Basic " + btoa("prabhudasu:root"),
-  //Authorization: `Bearer ${token}`,
-
-  // "x-csrf-token": window.Liferay?.authToken || ""
-
-});
-
-const buildCreds = () => "include"; // or "omit" based on your needs
 
 // Fetch districts by stateId
 export async function fetchDistrictsByState(stateId) {

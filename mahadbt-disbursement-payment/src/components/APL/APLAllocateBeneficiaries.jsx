@@ -101,6 +101,12 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
   const [billGeneratedBillInfo, setBillGeneratedBillInfo] = useState({});
 
+  const [showAllocateButton, setShowAllocateButton] = useState(searchResults?.families?.length > 0);
+
+  const [showGenerateButton, setShowGenerateButton] = useState(false);
+  const [showDownloadBeneficiariesButton, setshowDownloadBeneficiariesButton] = useState(searchResults?.families?.length > 0);
+
+
   // Sample data (can be overridden by props)
   const safeData = searchResults || [];
 
@@ -109,6 +115,10 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
     console.log("searchResults updated:", searchResults);
     console.log("selectedBeneficiaries updated:", selectedBeneficiaries);
     console.log("allocateInputData updated:", allocateInputData);
+    if(searchResults?.families?.length > 0) {
+      if(!showGenerateButton)setShowAllocateButton(true);
+      setshowDownloadBeneficiariesButton(true);
+    }
   }, [searchResults, selectedBeneficiaries, allocateInputData]);
 
   const totalBeneficiaryAmount = () => {
@@ -180,6 +190,8 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
     // Set allocation success to true to keep office payment number visible
     setAllocationSuccess(true);
+    setShowAllocateButton(false)
+    setShowGenerateButton(true)
   };
 
   const exportToExcel = async () => {
@@ -245,6 +257,16 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
       // Don't reset allocated amount and allocated beneficiaries here
       // as they represent actual allocated values
     }));
+
+     setBillGeneratedBillInfo(prev => ({
+      ...prev,
+    totalFamilies: searchResults?.total_families || 0,
+    totalMembers: searchResults?.total_members || 0,
+    totalAmount: searchResults?.total_amount || 0
+    }));
+
+    console.log("BillGeneration payload response:", billGeneratedBillInfo);
+
 
     setShowGenerateModal({
       show: true,
@@ -698,6 +720,9 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
             </div>
 
             {/* Right side: Download buttons */}
+            
+            {showDownloadBeneficiariesButton && (
+
             <div
               className="d-flex flex-column gap-2"
               style={{ minWidth: "250px" }}
@@ -717,6 +742,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
                 Download Beneficiary List - PDF
               </button>
             </div>
+            )}
           </div>
 
           <table
@@ -736,20 +762,27 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
           )}
 
           {/* Action buttons */}
+        {showAllocateButton && (
+
           <div className="p-3 d-flex justify-content-end gap-2">
             <button className="btn btn-primary px-4" onClick={handleAllocate}>
               Allocate Beneficiaries
             </button>
           </div>
-        </div>
 
-        <div className="p-3 d-flex align-items-center gap-2">
+        )}
+
+        {showGenerateButton && (
+
+         <div className="p-3 d-flex justify-content-end gap-2">
             <button
               className="btn btn-primary px-4"
               onClick={() => handleGenerateBill()}
             >
               Generate Bill
             </button>
+        </div>
+      )}
         </div>
         
         <style jsx>{`
@@ -791,6 +824,9 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
             allocateInputData={allocateInputData}
             isPensionRole={true}
             searchData={searchData}
+            showGenerateButton={showGenerateButton}
+            setShowGenerateButton={setShowGenerateButton}
+            searchResults={searchResults}
           />{" "}
         </>
       )}

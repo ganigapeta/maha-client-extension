@@ -1,15 +1,13 @@
+import { buildCreds, buildHeaders } from "../config";
+
 export async function fetchSchemeName(userId, setApiRes) {
   try {
     const response = await fetch(
       `/o/c/ddomasters/?filter=dDOUserID eq ${Number(userId)}`,
       {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
-        },
-        credentials: "include",
+        headers: buildHeaders(),
+        credentials: buildCreds(),
       },
     );
 
@@ -45,12 +43,8 @@ export async function fetchSchemeNameDDOMapping(ddoMappingId) {
       `/o/c/ddoschememappings/?filter=r_dDOMapping_c_ddoMasterId eq '${ddoMappingId}'`,
       {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
-        },
-        credentials: "include",
+        headers: buildHeaders(),
+        credentials: buildCreds(),
       },
     );
 
@@ -123,13 +117,8 @@ export async function fetchSchemeNameByRole(roleNames) {
     const roleRes = await fetch(
       `/o/c/roleschememappings/?filter=roleName eq '${matchedRole}'`,
       {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: "Basic " + btoa("prabhudasu:root"),
-          // "x-csrf-token": window.Liferay?.authToken || "",
-        },
-        credentials: "include",
+        headers: buildHeaders(),
+        credentials: buildCreds(),
       },
     );
 

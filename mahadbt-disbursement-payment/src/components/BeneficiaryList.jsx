@@ -4,6 +4,7 @@ import APLDashboard from './APL/APLDashboard';
 import PensionDashboard from './PensionDashboard';
 
 import {getUserRolesById } from '../api/fetch-role';
+import { getLiferayUserId, isSignedIn } from '../config';
 
 
 const BeneficiaryList = () => {
@@ -82,13 +83,13 @@ const hasAPLRole = Array.isArray(roles)
 useEffect(() => {
   const fetchUserRoles = async () => {
     try {
-      //if (window.Liferay?.ThemeDisplay?.isSignedIn()) {
-        const userId = 3072462; // window.Liferay.ThemeDisplay.getUserId();
+      if (isSignedIn()) {
+        const userId = getLiferayUserId();
         setLoginUserId(userId);
         const userData = await getUserRolesById(userId);
         console.log("userData roleBriefs", userData?.roleBriefs, userData);
         setRoles(userData?.roleBriefs);
-      //}
+      }
     } catch (err) {
       console.error(err);
     }

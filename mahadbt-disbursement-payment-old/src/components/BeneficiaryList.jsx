@@ -64,9 +64,7 @@ useEffect(() => {
   const fetchUserRoles = async () => {
     try {
       // if (window.Liferay?.ThemeDisplay?.isSignedIn()) {
-        // const userId = window.Liferay.ThemeDisplay.getUserId();
-        const userId = 3072462
-
+        const userId = window.Liferay.ThemeDisplay.getUserId();
         setLoginUserId(userId);
         const userData = await getUserRolesById(userId);
         console.log("userData roleBriefs", userData?.roleBriefs, userData);

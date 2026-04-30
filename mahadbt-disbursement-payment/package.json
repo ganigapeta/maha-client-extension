@@ -1,5 +1,5 @@
 {
-  "name": "@liferay/mahadbt-disbursement-payment",
+  "name": "@liferay/mahadbt-disbursement-payment-apl",
   "version": "0.1.0",
   "private": true,
   "proxy": "https://mahadbt2-qa-dashboard.quantela.com",

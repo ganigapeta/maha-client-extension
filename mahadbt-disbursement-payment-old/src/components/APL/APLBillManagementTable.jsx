@@ -61,8 +61,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
   }, []);
 
   useEffect(() => {
-    // const userId = window.Liferay.ThemeDisplay.getUserId();
-    const userId = 3072462;
+    const userId = window.Liferay.ThemeDisplay.getUserId();
    setLoginUserId(userId);
    console.log("Step 5 - userId set to", userId);
 
@@ -1699,8 +1698,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
           throw new Error("Failed to update billmanagement row");
         }
 
-       // const userId = window.Liferay.ThemeDisplay.getUserId();
-            const userId = 3072462;
+       const userId = window.Liferay.ThemeDisplay.getUserId();
        const refreshedBills = await getBills(userId);
 
         const mappedData = refreshedBills.map(item => ({

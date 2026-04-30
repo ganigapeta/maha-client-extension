@@ -7,11 +7,12 @@ import jsPDF from 'jspdf';
 // Import pdfmake
 import pdfMake from 'pdfmake/build/pdfmake.min';
 import pdfMakeVfs from 'pdfmake/build/vfs_fonts';
+import { buildCreds, buildHeadersDocument, getLiferayUserId, getScopeGroupId } from '../../config';
 
 // Setup pdfmake with fonts
 pdfMake.vfs = pdfMakeVfs;
 
-const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateInputData, isPensionRole = false, searchData, billGeneratedBillInfo }) => {
+const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateInputData, isPensionRole = false, searchData, billGeneratedBillInfo, setShowGenerateButton, searchResults }) => {
   const [loginUserId, setLoginUserId] = useState(null);
   const [responseData, setResponseData] = useState([]);
   const [submittedBillList, setSubmittedBillList] = useState([]);
@@ -61,8 +62,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
   }, []);
 
   useEffect(() => {
-    // const userId = window.Liferay.ThemeDisplay.getUserId();
-    const userId = 3072462;
+    const userId = getLiferayUserId();
     setLoginUserId(userId);
 
     const saveData = async () => {
@@ -98,8 +98,11 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
         }));
 
         setResponseData(mappedData);
+        setShowGenerateButton(false)
+        setSubmittedBillList([{ "billNumber": pendingBill[0]?.billNumber || "" }]);
       } catch (error) {
         console.error("Error:", error);
+        setShowGenerateButton(true)
       }
     };
 
@@ -1657,23 +1660,20 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
 
         const pdfBlob = doc.output("blob");
         const fileName = `RFT_${rowData.billNumber}.pdf`;
-        const siteId = window.Liferay?.ThemeDisplay?.getScopeGroupId();
+        const siteId = getScopeGroupId();
 
         const formData = new FormData();
         formData.append("file", pdfBlob, fileName);
         formData.append("title", fileName);
         formData.append("description", `RFT generated for bill ${rowData?.billNumber || ""}`);
-        const url = `/o/headless-delivery/v1.0/sites/20118/documents`;
+        const url = `/o/headless-delivery/v1.0/sites/${siteId}/documents`;
+
         const uploadRes = await fetch(
           url,
           {
             method: "POST",
-            headers: {
-              Accept: "application/json",
-              // "x-csrf-token": window.Liferay?.authToken || "",
-              Authorization: "Basic " + btoa("prabhudasu:root"),
-            },
-            credentials: "include",
+            headers: buildHeadersDocument(),
+            credentials: buildCreds(),
             body: formData,
           }
         );
@@ -1697,8 +1697,8 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            // "x-csrf-token": window.Liferay?.authToken || "",
-            Authorization: "Basic " + btoa("prabhudasu:root"),
+            "x-csrf-token": window.Liferay?.authToken || "",
+            // Authorization: "Basic " + btoa("prabhudasu:root"),
           },
           credentials: "include",
           body: JSON.stringify({
@@ -1714,7 +1714,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
           throw new Error("Failed to update billmanagement row");
         }
 
-        const userId = window.Liferay.ThemeDisplay.getUserId();
+        const userId = getLiferayUserId();
         const refreshedBills = await getBills(userId);
 
         const mappedData = refreshedBills.map(item => ({
@@ -1959,7 +1959,9 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
         </div>
       )}
 
-      {billGeneratedBillInfo.allotment_id && (
+      {/* {billGeneratedBillInfo.allotment_id && ( */}
+      {submittedBillList.length > 0 && (
+
         <APLBillSubmission
           searchData={searchData}
           apiRes={apiRes}
@@ -1968,6 +1970,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
           setSubmittedBillList={setSubmittedBillList}
           generateRftOnly={generateRftOnly}
           billRowData={billInfo}
+          searchResults={searchResults}
         />
       )}
       {showPasswordModal && (

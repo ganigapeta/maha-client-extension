@@ -181,9 +181,10 @@ const transformToFamilyStructureAmount = (apiData) => {
 
       // ✅ Aggregate only once per unique RC (family)
       totalMembers += record.member_count || 0;
-      totalAmount += (record.member_count || 0) * (record.amount || 0);
     }
   });
+
+    totalAmount = totalMembers * 170;
 
   const families = Array.from(familiesMap.values());
 
@@ -333,6 +334,24 @@ export const apiService = {
   allocateAPLBeneficiaries: async (payload, searchParams, setBillGeneratedBillInfo) => {
     // Extract month number from month name
 
+       // Extract month number from month name
+      const monthMap = {
+        January: 1,
+        February: 2,
+        March: 3,
+        April: 4,
+        May: 5,
+        June: 6,
+        July: 7,
+        August: 8,
+        September: 9,
+        October: 10,
+        November: 11,
+        December: 12,
+      };
+      const mm = monthMap[searchParams.installment] || parseInt(searchParams.installment);
+
+
     let billNumber = generateBillNumber();
 console.log("Generated Bill Number:", payload[0]);
     // Add fy and mm to each record in payload
@@ -343,6 +362,7 @@ console.log("Generated Bill Number:", payload[0]);
       bill_date: new Date().toISOString().split('T')[0],
       bill_generated_by: searchParams.user_id || 1,
       fy: searchParams?.financialYear,
+      mm: mm,
       allotment_id: generateAllotmentID(),
       application_no: generateApplicationNo(),
       bill_no: billNumber, // e.g., '2026-27'
@@ -379,7 +399,7 @@ console.log("Generated Bill Number:", payload[0]);
         November: 11,
         December: 12,
       };
-      const mm = monthMap[payload.month] || parseInt(payload.month);
+      const mm = monthMap[payload.installment] || parseInt(payload.installment);
       payload.mm = mm; // Month number 1-12
 
 
