@@ -105,7 +105,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
   const [showGenerateButton, setShowGenerateButton] = useState(false);
   const [showDownloadBeneficiariesButton, setshowDownloadBeneficiariesButton] = useState(searchResults?.families?.length > 0);
-
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Sample data (can be overridden by props)
   const safeData = searchResults || [];
@@ -120,6 +120,15 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
       setshowDownloadBeneficiariesButton(true);
     }
   }, [searchResults, selectedBeneficiaries, allocateInputData]);
+
+  const formatAmountIndian = (value) => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return "0.00";
+    return amount.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
   const totalBeneficiaryAmount = () => {
     const isFirstInstallment = searchData?.installment === "1st Installment" || isPensionInstallment;
@@ -274,17 +283,123 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
     })
   };
 
-  const handleDownloadExcel = () => {
-    console.log("Downloading beneficiary list as Excel...");
-    // TODO: Implement Excel download logic
-    alert("Excel download functionality to be implemented");
+  const handleDownloadExcel = async () => {
+    setIsDownloading(true);
+
+    try {
+      const dataToExport = await Promise.all(
+        backupSearchData.map(async (item, index) => {
+
+          const row = {
+            "S.No": index + 1,
+            "District": item?.dist_name || "",
+            "Amount (₹)": `₹ ${formatAmountIndian(item.amount)}`,
+          };
+
+          return row;
+        })
+      );
+
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Beneficiaries");
+      XLSX.writeFile(wb, `Beneficiary_Allocation_${apiRes?.ddoMaster?.dDOCode || 'List'}_${new Date().getTime()}.xlsx`);
+    } catch (error) {
+      console.error("Error preparing data for Excel export:", error);
+      alert("An error occurred while preparing the Excel file. Please try again.");
+      setIsDownloading(false);
+      return;
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   // Handle PDF Download
-  const handleDownloadPDF = () => {
-    console.log("Downloading beneficiary list as PDF...");
-    // TODO: Implement PDF download logic
-    alert("PDF download functionality to be implemented");
+  const handleDownloadPDF = async () => {
+    setIsDownloading(true);
+    try {
+      // Simulate a small delay to show loading state (optional)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // Header row with all columns
+      const tableHeader = [
+        { text: "Sr.No.", style: "th", alignment: "center" },
+        { text: "District", style: "th", alignment: "center" },
+        { text: "Amount (₹)", style: "th", alignment: "center" },
+      ];
+
+      // Data rows
+      const tableRows = backupSearchData.map((item, index) => [
+        { text: String(index + 1), style: "td", alignment: "center" },
+        { text: item.dist_name || "", style: "td", alignment: "center" },
+        { text: `₹ ${formatAmountIndian(item.amount)}`, style: "td", alignment: "right" },
+      ]);
+
+      const totalRow = [
+        { },
+        {}, {},
+      ];
+
+      const dd = {
+        pageSize: "A4",
+        pageOrientation: "landscape",
+        pageMargins: [28, 28, 28, 28],
+
+        content: [
+          {
+            text: "Beneficiary Detail",
+            style: "pageTitle",
+            alignment: "center",
+            margin: [0, 0, 0, 10],
+          },
+          {
+            columns: [
+              { width: "*", text: "" },
+              {
+                width: "auto",
+                table: {
+                  headerRows: 1,
+                  widths: [25, 100, 120],  // ← use dynamic widths
+                  body: [tableHeader].concat(tableRows).concat([totalRow]),
+                },
+                layout: {
+                  hLineWidth: function () { return 0.6; },
+                  vLineWidth: function () { return 0.6; },
+                  hLineColor: function () { return "#aaaaaa"; },
+                  vLineColor: function () { return "#aaaaaa"; },
+                  fillColor: function (rowIndex) {
+                    if (rowIndex === 0) return "#dce6f1";
+                    return (rowIndex % 2 === 0) ? "#f5f7fb" : null;
+                  },
+                  paddingLeft: function () { return 4; },
+                  paddingRight: function () { return 4; },
+                  paddingTop: function () { return 4; },
+                  paddingBottom: function () { return 4; },
+                },
+              },
+              { width: "*", text: "" },
+            ],
+          },
+        ],
+
+        styles: {
+          pageTitle: { fontSize: 13, bold: true, font: "Roboto", color: "#1a237e" },
+          th: { fontSize: 8, bold: true, font: "Roboto" },
+          td: { fontSize: 8, bold: false, font: "Roboto" },
+        },
+
+        defaultStyle: { font: "Roboto", fontSize: 8 },
+      };
+
+      window.pdfMake.createPdf(dd).download("Beneficiary_Detail.pdf");
+
+    } catch (error) {
+      console.error("Error preparing data for PDF export:", error);
+      alert("An error occurred while preparing the PDF file. Please try again.");
+      setIsDownloading(false);
+      return;
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleInputChange = (e) => {
