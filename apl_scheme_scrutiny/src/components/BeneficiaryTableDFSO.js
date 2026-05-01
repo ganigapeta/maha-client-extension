@@ -234,7 +234,10 @@ const BeneficiaryTableDFSO = ({ beneficiaries, searchParams, userRole }) => {
     const payload = {
       rc_numbers: rcNumbers,
       status: 'REJECTED',
-      remarks: remarks
+      remarks: remarks,
+      fy: searchParams?.financialYear,
+      month: searchParams?.month,
+      fpsCode: searchParams?.fpsCode,
     };
 
     console.log('DFSO - Reject Payload:', JSON.stringify(payload, null, 2));
@@ -499,7 +502,7 @@ const BeneficiaryTableDFSO = ({ beneficiaries, searchParams, userRole }) => {
       </div>
 
       {/* Action Buttons - Reject and Approve */}
-      <div className="p-6 border-t border-gray-200 flex justify-between items-center">
+      <div className="p-6 border-t border-gray-200 flex justify-end items-center gap-3">
         <button
           onClick={handleReject}
           className="btn-primary hover:btn-primary text-white font-semibold px-6 py-2 rounded-lg transition shadow-md hover:shadow-lg text-sm"

@@ -1,6 +1,88 @@
 import forge from "node-forge";
 import { buildCreds, buildHeaders } from "../config";
 
+export async function saveSelectedBeneficiarieAPL(
+  selectedBeneficiaries,
+  apiRes,
+  allocateInputData,
+  userId,
+) {
+  try {
+    console.log(
+      "Save ::::::::::",
+      selectedBeneficiaries,
+      apiRes,
+      allocateInputData,
+      userId,
+    );
+
+    // Check if bill already exists for this batch
+    const existingCheck = await fetch(
+      `/o/c/billmanagements?filter=billNumber eq '${selectedBeneficiaries[0].bill_no}'`,
+      {
+         headers: buildHeaders(),
+         credentials: buildCreds(),
+      },
+    );
+    const existingData = await existingCheck.json();
+    if (existingData?.items?.length > 0) {
+      console.log("Bill already exists for this batch, skipping creation");
+      return existingData.items[0];
+    }
+    //  Main Bill Payload
+    // Fetch DDO scheme mapping to get ddoCode if not in apiRes
+    let ddoCodeValue = apiRes?.ddoRecord?.dDOCode || "";
+    if (!ddoCodeValue && apiRes?.schemeData?.id) {
+      try {
+        const ddoMappingRes = await fetch(
+          `/o/c/ddoschememappings?filter=r_schemeMapping_c_schemeConfiguratorId eq '${apiRes.schemeData.id}'`,
+          {
+            headers: buildHeaders(),
+            credentials: buildCreds(),
+          },
+        );
+        const ddoMappingData = await ddoMappingRes.json();
+        ddoCodeValue = ddoMappingData?.items?.[0]?.dDOCode || "";
+      } catch (e) {
+        console.error("Failed to fetch DDO mapping:", e);
+      }
+    }
+
+    let payload = {
+      billNumber: selectedBeneficiaries[0].bill_no || selectedBeneficiaries[0].batchID,
+      schemeCode: allocateInputData.schemeCode || '',
+      ddoCode: ddoCodeValue,
+      allocatedAmount: allocateInputData?.allocatedAmount || 0,
+      beneficiaryCount: allocateInputData?.noOfBeneficiariesInput || 0,
+      submittedStatus: "Pending",
+      ddoUserId: userId,
+    };
+
+    console.log("Bill Payload:", payload);
+
+    const response = await fetch(`/o/c/billmanagements`, {
+      method: "POST",
+      headers: buildHeaders(),
+      credentials: buildCreds(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Bill creation failed: ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log("Bill Created:", result);
+
+    return result;
+  } catch (error) {
+    console.error("Error saving bill:", error);
+
+    return [];
+  }
+}
+
 export async function saveSelectedBeneficiarie(
   selectedBeneficiaries,
   apiRes,

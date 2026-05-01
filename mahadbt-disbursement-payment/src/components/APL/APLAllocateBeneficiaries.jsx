@@ -257,7 +257,8 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
   const handleGenerateBill = () => {
     setAllocateInputData(prev => ({
       ...prev,
-      schemeCode: searchData?.schemeName,
+      schemeName: searchData?.schemeName,
+      schemeCode: searchData?.schemeCode,
       allocatedAmount: searchResults?.total_amount,
       beneficiaryCount: searchResults?.total_families || 0,
       submittedStatus: "Pending",
@@ -311,6 +312,8 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
             "Aadhaar Linked Bank Account Available?":
               item?.is_aadhaar_linked_account ? "Yes" : "No",
             "Total Family Member": item?.member_count || "",
+            "Financial Year": searchData?.financialYear || "",
+            "Installment Month": searchData?.installment || "",
             "Total Benefit Amount (₹)": item?.amount
               ? `₹ ${formatAmountIndian(item.amount)}`
               : "",
@@ -323,7 +326,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
       const ws = XLSX.utils.json_to_sheet(dataToExport);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Beneficiaries");
-      XLSX.writeFile(wb, `Beneficiary_Allocation_${apiRes?.ddoMaster?.dDOCode || 'List'}_${new Date().getTime()}.xlsx`);
+      XLSX.writeFile(wb, `Beneficiary_Allocation_${searchData?.financialYear}_${searchData?.installment}_${apiRes?.ddoMaster?.dDOCode || 'List'}_${new Date().getTime()}.xlsx`);
     } catch (error) {
       console.error("Error preparing data for Excel export:", error);
       alert("An error occurred while preparing the Excel file. Please try again.");
@@ -360,6 +363,8 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
       { text: "EKYC Status", style: "th", alignment: "center" },
       { text: "Aadhaar Linked Bank Account Available?", style: "th", alignment: "center" },
       { text: "Total Family Member", style: "th", alignment: "center" },
+      { text: "Financial Year", style: "th", alignment: "center" },
+      { text: "Installment Month", style: "th", alignment: "center" },
       { text: "Total Benefit Amount (₹)", style: "th", alignment: "center" },
     ];
 
@@ -383,6 +388,8 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
       { text: String(item?.ekyc || ""), style: "td", alignment: "center" },
       { text: item?.is_aadhaar_linked_account ? "Yes" : "No", style: "td", alignment: "center" },
       { text: String(item?.member_count ?? ""), style: "td", alignment: "center" },
+      { text: searchData?.financialYear || "", style: "td", alignment: "center" },
+      { text: searchData?.installment || "", style: "td", alignment: "center" },
       { text: item?.amount ? `₹ ${formatAmountIndian(item.amount)}` : "", style: "td", alignment: "right" },
     ]);
 
@@ -421,6 +428,8 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
               30,   // EKYC Status
               40,   // Aadhaar Linked
               30,   // Total Family Member
+              30,   // Financial Year
+              30,   // Installment Month
               45,   // Total Benefit Amount
             ],
             body: [tableHeader, ...tableRows],  // ← clean spread, no totalRow
@@ -451,7 +460,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
       defaultStyle: { font: "Roboto", fontSize: 7 },
     };
 
-    window.pdfMake.createPdf(dd).download("Beneficiary_Detail.pdf");
+    window.pdfMake.createPdf(dd).download(`Beneficiary_Detail_${searchData?.financialYear}_${searchData?.installment}.pdf`);
 
   } catch (error) {
     console.error("Error preparing data for PDF export:", error);

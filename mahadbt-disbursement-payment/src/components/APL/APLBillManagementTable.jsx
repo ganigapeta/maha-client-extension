@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { saveSelectedBeneficiarie, getBills, getDataBaseOnBillNumber } from "../../api/save";
+import { getBills, getDataBaseOnBillNumber, saveSelectedBeneficiarieAPL } from "../../api/save";
 import APLBillSubmission from "./APLBillSubmission";
 import { getObjectName } from '../../api/fetch-scheme';
 import jsPDF from 'jspdf';
@@ -69,7 +69,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
 
     const saveData = async () => {
       try {
-        await saveSelectedBeneficiarie(
+        await saveSelectedBeneficiarieAPL(
           selectedBeneficiaries,
           apiRes,
           allocateInputData,
@@ -1590,7 +1590,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
     return new Blob(byteArrays, { type: contentType });
   };
 
-  const generateRftOnly = async (rowData) => {
+  const generateRftOnlyOld = async (rowData) => {
     try {
       setGeneratingBillId(rowData.id);
 
@@ -1737,6 +1737,259 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
     }
   };
 
+  const generateRftOnly = async (rowData) => {
+  try {
+    setGeneratingBillId(rowData.id);
+
+    if (isPensionRole) {
+      const doc = new jsPDF();
+
+      const totalAmount    = Number(rowData?.allocatedAmount || 0);
+      const beneficiaryCount = Number(rowData?.beneficiaryCount || 0);
+
+      // ── Financial Year resolver ────────────────────────────────────────────
+      const resolveFinancialYear = () => {
+        const fy = searchData?.financialYear;
+        if (fy && /^\d{4}$/.test(fy)) {
+          const startYear = 2000 + parseInt(fy.substring(0, 2), 10);
+          const endYear   = 2000 + parseInt(fy.substring(2, 4), 10);
+          return `${startYear}-${endYear}`;
+        }
+        if (fy && fy.includes("-")) return fy;
+        const billDate = new Date(rowData?.dateCreated || new Date());
+        const year  = billDate.getFullYear();
+        const month = billDate.getMonth() + 1;
+        return month >= 4 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+      };
+
+      const financialYear = resolveFinancialYear();
+
+      // ── Period label (e.g. "Apr 2024") ────────────────────────────────────
+      // Derived from rowData.dateCreated or searchData.month if available
+      const resolvePeriodLabel = () => {
+        const monthNames = [
+          "Jan","Feb","Mar","Apr","May","Jun",
+          "Jul","Aug","Sep","Oct","Nov","Dec"
+        ];
+        // Prefer explicit month from search filters if present
+        if (searchData?.month && searchData?.year) {
+          const m = parseInt(searchData.month, 10);
+          return `${monthNames[m - 1]} ${searchData.year}`;
+        }
+        // Fallback: derive from bill date
+        const billDate = new Date(rowData?.dateCreated || new Date());
+        return `${monthNames[billDate.getMonth()]} ${billDate.getFullYear()}`;
+      };
+
+      const periodLabel = resolvePeriodLabel();
+
+      // ── Department name resolver ───────────────────────────────────────────
+      const rawDepartmentValue = apiRes?.schemeData?.department;
+      let departmentName = searchData?.department || "Food and Civil Supplies";
+
+
+
+      if (rawDepartmentValue) {
+        if (isNaN(Number(rawDepartmentValue))) {
+          departmentName = rawDepartmentValue;
+        } else {
+          departmentName = await getObjectName("departments", "id", rawDepartmentValue);
+        }
+      }
+
+      // ── Commissioner / Authority name resolver ────────────────────────────
+      // In the new format the authority is "Commissioner of <Department>"
+      // Adjust this resolver to match your data model as needed.
+      const resolveAuthority = () => {
+        if (apiRes?.schemeData?.authorityTitle) {
+          return apiRes.schemeData.authorityTitle;
+        }
+        // Default: prepend "Commissioner of" to the department name
+        return `Commissioner of ${departmentName}`;
+      };
+
+      const authorityTitle = resolveAuthority();
+
+      // ── Bank / IFSC details ───────────────────────────────────────────────
+      const bankName    = apiRes?.schemeData?.bankName    || "STATE BANK OF INDIA";
+      const ifscCode    = apiRes?.schemeData?.ifscCode    || "SBIN0008586";
+      const accountNum  = apiRes?.schemeData?.accountNumber || "42862025057";
+      const schemeName  = rowData?.schemeName || "Scheme";
+
+      // ── Fund Transfer Request Number ──────────────────────────────────────
+      // Format: MH<FY>-<SCHEME_CODE>-<DD MM YYYY> <billNumber>
+      // const buildRftNumber = () => {
+      //   const schemeCode = apiRes?.schemeData?.schemeCode || "SCHEME";
+      //   const fyCompact  = financialYear.replace("-", "");   // "20242025"
+      //   const dateStr    = new Date().toLocaleDateString("en-GB")
+      //                         .replace(/\//g, " ");           // "22 05 2025"
+      //   return `MH${fyCompact}-${schemeCode}-${dateStr} ${rowData?.billNumber || "NA"}`;
+      // };
+
+      // generateRFTNumber
+      const rftNumber = rowData?.billNumber;
+
+      // ── Amount formatting helpers ─────────────────────────────────────────
+      const formattedAmount = `${totalAmount.toLocaleString("en-IN")}.000/-`;
+      const amountInWords   = amountToWordsIndian(totalAmount);   // existing helper
+      const countInWords    = numberToWordsIndian(beneficiaryCount); // existing/add helper
+
+      // ── PAGE LAYOUT CONSTANTS (mm) ────────────────────────────────────────
+      const PAGE_W    = 210;
+      const PAGE_H    = 297;
+      const MARGIN    = 15;       // border inset from page edge
+      const LEFT      = MARGIN + 8;   // text left margin inside border
+      const RIGHT_W   = 170;          // usable text width
+      const CENTER    = PAGE_W / 2;
+
+      // ── BORDER RECTANGLE ──────────────────────────────────────────────────
+      doc.setLineWidth(0.5);
+      doc.rect(MARGIN, MARGIN, PAGE_W - MARGIN * 2, PAGE_H - MARGIN * 2);
+
+      // ── HEADER ────────────────────────────────────────────────────────────
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Government of MAHARASHTRA", CENTER, 40, { align: "center" });
+
+      doc.setFontSize(12);
+      doc.text(`Department of ${departmentName}, Maharashtra`, CENTER, 48, { align: "center" });
+
+      // ── META FIELDS ───────────────────────────────────────────────────────
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+
+      let y = 62;
+      const LINE_H = 8;   // line height between meta fields
+
+      doc.text(`Fund Transfer request Number: ${rftNumber}`, LEFT, y);
+      y += LINE_H;
+
+      doc.text(`Date: ${new Date().toLocaleDateString("en-GB")}`, LEFT, y);
+      y += LINE_H;
+
+      doc.text(`For the period of ${periodLabel}`, LEFT, y);
+      y += LINE_H + 4;   // extra gap before body paragraph
+
+      // ── BODY PARAGRAPH ────────────────────────────────────────────────────
+      const bodyText =
+        `${authorityTitle}, Government of Maharashtra, is hereby requested to ` +
+        `release an amount of Rs. ${formattedAmount} (Rupees ${amountInWords}.) ` +
+        `to the Bank. ${bankName} having IFSC Code ${ifscCode}, in Account number ` +
+        `${accountNum}, for crediting, the benefits under ${schemeName} in the ` +
+        `beneficiary's account.`;
+
+      const splitBody = doc.splitTextToSize(bodyText, RIGHT_W);
+      doc.text(splitBody, LEFT, y);
+      y += splitBody.length * 6 + 6;   // dynamic gap based on wrapped lines
+
+      // ── BENEFICIARY COUNT ─────────────────────────────────────────────────
+      const countText =
+        `Total number of beneficiaries included in this request is ${beneficiaryCount} ` +
+        `(${countInWords} Only. )`;
+
+      const splitCount = doc.splitTextToSize(countText, RIGHT_W);
+      doc.text(splitCount, LEFT, y);
+      y += splitCount.length * 6 + 6;
+
+      // ── TOTAL AMOUNT ──────────────────────────────────────────────────────
+      const totalText =
+        `Total amount due to the beneficiaries is Rs.${formattedAmount}` +
+        `(${amountInWords} Only).`;
+
+      const splitTotal = doc.splitTextToSize(totalText, RIGHT_W);
+      doc.text(splitTotal, LEFT, y);
+      y += splitTotal.length * 6 + 6;
+
+      // ── CERTIFICATION ─────────────────────────────────────────────────────
+      const certText =
+        "It is certified that the details of beneficiaries included in this request have been verified " +
+        "and found to be correct.";
+
+      const splitCert = doc.splitTextToSize(certText, RIGHT_W);
+      doc.text(splitCert, LEFT, y);
+
+      // ── UPLOAD TO LIFERAY ─────────────────────────────────────────────────
+      const pdfBlob = doc.output("blob");
+      const fileName = `RFT_${rowData.billNumber}.pdf`;
+      const siteId   = getScopeGroupId();
+
+    //   if (true) {
+    //   doc.save(fileName);   // downloads to your machine
+    //   return;   // stops before uploading to Liferay
+    //  }
+      const formData = new FormData();
+      formData.append("file",        pdfBlob, fileName);
+      formData.append("title",       fileName);
+      formData.append("description", `RFT generated for bill ${rowData?.billNumber || ""}`);
+
+      const uploadRes = await fetch(
+        `/o/headless-delivery/v1.0/sites/${siteId}/documents`,
+        {
+          method:      "POST",
+          headers:     buildHeadersDocument(),
+          credentials: buildCreds(),
+          body:        formData,
+        }
+      );
+
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok) {
+        console.error("Upload failed:", uploadJson);
+        throw new Error(uploadJson?.message || "Failed to upload RFT");
+      }
+
+      const fileEntryId = String(uploadJson?.id || "");
+      const downloadUrl =
+        uploadJson?.contentUrl  ||
+        uploadJson?.downloadURL ||
+        uploadJson?.url         ||
+        "";
+
+      // ── PATCH BILL RECORD ─────────────────────────────────────────────────
+      const patchRes = await fetch(`/o/c/billmanagements/${rowData.id}`, {
+        method:      "PATCH",
+        headers:     buildHeaders(),
+        credentials: buildCreds(),
+        body: JSON.stringify({
+          beamsPdfUrl:     downloadUrl,
+          beamsPdfId:      fileEntryId,
+          submittedStatus: "Completed",
+        }),
+      });
+
+      if (!patchRes.ok) {
+        const errText = await patchRes.text();
+        console.error("Billmanagement patch failed:", errText);
+        throw new Error("Failed to update billmanagement row");
+      }
+
+      // ── REFRESH UI ────────────────────────────────────────────────────────
+      const userId        = getLiferayUserId();
+      const refreshedBills = await getBills(userId);
+
+      const mappedData = refreshedBills.map((item) => ({
+        ...item,
+        beneficiaryAllocatedCount: Number(item.beneficiaryCount || 0),
+        submittedBillStatus:       item.submittedStatus,
+        paymentAuthorizationLetter: item.paymentAuthLetter,
+        mtr:                       item.mtrFile,
+        beneficiaryListExport:     item.beneficiaryExport,
+        beams:                     item.beamsStatus,
+      }));
+
+      setSubmittedBillList([]);
+      setBillSubmitted(true);
+      setResponseData(mappedData);
+
+    } else {
+      await preparePdfForSigning(rowData);
+    }
+  } catch (error) {
+    console.error("generateRftOnly error:", error);
+  } finally {
+    setGeneratingBillId(null);
+  }
+};
   const handlePasswordConfirm = async () => {
     const CORRECT_PASSWORD = 'chef$123';
 
@@ -1945,7 +2198,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
                         >
                           {generatingBillId === item.id
                             ? "Generating..."
-                            : "Download Letter"}
+                            : "Download RFT"}
                         </button>
                       ) : (
                         "-"

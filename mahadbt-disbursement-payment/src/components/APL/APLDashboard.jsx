@@ -47,7 +47,7 @@ function APLDashboard({
   const [showLoader, setShowLoader] = useState(false);
   const [months, setMonths] = useState([]);
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, reset, watch, formState: { errors } } = useForm({
     resolver: yupResolver(beneficiaryFilterValidationSchema),
     defaultValues: {
       schemeName: '',
@@ -69,6 +69,9 @@ function APLDashboard({
           id: '179438_179411',
           name: 'Above Poverty Line (APL) Scheme',
           schemeCode: 'FACS-FACS-APL-2-26-003',
+          schemeName: 'Above Poverty Line (APL) Scheme',
+          r_schemeMapping_c_schemeConfiguratorId: '179438_179411',
+          department: 'Food and Civil Supplies',
           benefitsJsonData: ''
         });
       }
@@ -112,10 +115,12 @@ function APLDashboard({
     setShowLoader(true);
     
     try {
+
+      const selectedScheme = JSON.parse(data?.schemeData);  // ← parse it back
       const results = await apiService.getWIPBeneficiaries(data);
       const familyObj = results?.families?.[0];
       setSearchResults(results || []);
-      setSearchData({ ...data, ...familyObj });
+      setSearchData({ ...data, ...familyObj, ...selectedScheme });
       setBackupSearchData(results.families || []);
       setShowLoader(false);
       setShow(true);
@@ -155,6 +160,10 @@ function APLDashboard({
                 <select
                   className={`form-select ${errors.schemeName ? 'is-invalid' : ''}`}
                   {...register('schemeName')}
+                 onChange={(e) => {
+                 const scheme = masterData.schemes?.find(s => s.schemeCode === e.target.value);
+                  setValue('schemeData', JSON.stringify(scheme));  // ← hidden field stores full object
+                }}
                 >
                   <option value="">Select</option>
                   {masterData.schemes?.map((scheme) => (

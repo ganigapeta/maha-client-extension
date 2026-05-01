@@ -122,7 +122,8 @@ class APLWipService {
           data.member_dob,
           data.uid,
           data.demo_auth,
-          data.ekyc
+          data.ekyc,
+          data.masked_aadhaar_no
         FROM ${tables.APL_WIP} wip
         LEFT JOIN ${tables.APL_DATA} data ON wip.member_id = data.member_id
         ${whereClause.replace('wf_status', 'wip.wf_status').replace('dfso_code', 'wip.dfso_code').replace('afso_code', 'wip.afso_code').replace('fps_code', 'wip.fps_code').replace('dist_code', 'wip.dist_code').replace('is_active', 'wip.is_active')}
@@ -1013,7 +1014,7 @@ async updateRftStatus(rcNumbers, status, remarks = null, userId = 1, fy = null, 
       const { query: rftQuery, params: rftParams } = buildUpdate(
         tables.APL_ALLOTMENT_DETAIL,         // 👈 replace with your second table
         rftUpdates,
-        `bill_no = ${requestBody.bill_no}`         // 👈 replace with your second table's where clause
+        `bill_no = '${requestBody.bill_no}'`         // 👈 replace with your second table's where clause
       );
 
       const rftResult = await client.query(rftQuery, rftParams);

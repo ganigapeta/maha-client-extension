@@ -2,7 +2,7 @@ import { buildCreds, buildHeaders } from "../config";
 
 
 // Fetch districts by stateId
-export async function fetchDistrictsByState(stateId) {
+export async function fetchDistrictsByState(stateId, isApl = true) {
   let allDistricts = [];
   let page = 1;
   let hasMore = true;
@@ -10,7 +10,7 @@ export async function fetchDistrictsByState(stateId) {
   try {
     while (hasMore) {
       const response = await fetch(
-        `/o/c/districts?filter=r_state_c_stateId eq '${stateId}'&page=${page}&pageSize=200&sort=name`,
+        `/o/c/districts?filter=r_state_c_stateId eq '${stateId}' and isApl eq ${isApl}&page=${page}&pageSize=200&sort=name`,
         {
           headers: buildHeaders(),
           credentials: buildCreds(),

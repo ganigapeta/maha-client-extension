@@ -14,7 +14,7 @@ const APLBillSubmission = ({ apiRes, submittedBillList, setResponseData, setSubm
   const billDetails = {
     schemeName: searchData.schemeName || 'N/A',
     ddoCode: apiRes?.ddoRecord?.dDOCode || 'N/A',
-    schemeCode: searchData.schemeName || 'N/A',
+    schemeCode: searchData.schemeCode || 'N/A',
     billNumber: billRowData?.bill_no || 'N/A',
     allocatedBeneficiary: billRowData?.totalFamilies || 'N/A',
     allocatedAmount: billRowData?.totalAmount
@@ -432,7 +432,7 @@ if (isSnoRole) {
 
         {/* Verification Message */}
         <div className="alert alert-light border mt-3">
-          The above bill downloaded and verified. The counts of beneficiaries and amount shown on the screen and in pdf are matching. Further submitting this Bill to BEAMS for further processing.
+          The above RFT downloaded and verified. The beneficiaries count and amount shown on the screen and in pdf are matching. The RFT is being submitted for further processing.
         </div>
 
         {/* Agreement Checkbox */}

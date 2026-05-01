@@ -114,6 +114,24 @@ export function generateAllotmentID() {
   const randomNumber = Math.floor(100 + Math.random() * 900);
   return `${timestampPart}-${randomNumber}`;
 }
+export function generateRFTNumber(financialYear) {
+  // financialYear should be like "2025-2026"
+  // Output: MH2025-2026/APLS/25072025/123456789
+
+  // Current date in DDMMYYYY format
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yyyy = now.getFullYear();
+  const currentDate = `${dd}${mm}${yyyy}`;
+
+  // 9-digit unique number using timestamp + random padding
+  const timestamp = Date.now().toString(); // 13 digits
+  const random = Math.floor(100 + Math.random() * 900).toString(); // 3 digits
+  const nineDigit = (timestamp + random).slice(-9); // take last 9 digits
+
+  return `MH${financialYear}/APLS/${currentDate}/${nineDigit}`;
+}
 
 
 export function generateApplicationNo(typeCode = 'APL', sequence = 1) {
@@ -352,8 +370,10 @@ export const apiService = {
       const mm = monthMap[searchParams.installment] || parseInt(searchParams.installment);
 
 
-    let billNumber = generateBillNumber();
-console.log("Generated Bill Number:", payload[0]);
+    // let billNumber = generateBillNumber();
+    let billNumber = generateRFTNumber(searchParams?.financialYear);
+
+    console.log("Generated Bill Number:", payload[0]);
     // Add fy and mm to each record in payload
     const enrichedPayload = payload.map((record) => ({
       ...record,
@@ -367,17 +387,19 @@ console.log("Generated Bill Number:", payload[0]);
       application_no: generateApplicationNo(),
       bill_no: billNumber, // e.g., '2026-27'
       rft_status: 'ALLOTTED',
-      batchID: billNumber
+      billNumber: billNumber
+      // rft_no: rftNumber
+      // batchID: billNumber
     }));
     try{
-  setBillGeneratedBillInfo(enrichedPayload[0]);
+    setBillGeneratedBillInfo(enrichedPayload[0]);
     const response = await api.post("/apl-bill/allotment/bulk", enrichedPayload);
     
     return {status: true, data: enrichedPayload};
      } catch (error) {
       console.error("Failed to Allocate:", error);
-      // return {status: false, data: [] };
-      return {status: false, data: enrichedPayload };
+      return {status: false, data: [] };
+      // return {status: false, data: enrichedPayload };
 
     }
   },
