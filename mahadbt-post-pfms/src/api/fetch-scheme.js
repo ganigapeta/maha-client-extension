@@ -8,9 +8,11 @@ export async function fetchSchemeNameForDDO(departmentValue, setMasterData, role
       "pension ddo": "Pension Schemes",
       "assistance ddo": "Special Assistance Schemes",
       "stipend ddo": "Stipend",
-      "pre matric ddo": "Pre Matric Scheme"
+      "pre matric ddo": "Pre Matric Scheme",
+      "wcdd ddo": "Special Assistance Schemes"
     };
 
+    
     const roleNames = (roles || []).map(r => String(r?.name || "").toLowerCase().trim());
     const matchedEntry = Object.entries(DDO_SCHEME_TYPE_MAP).find(([ddo]) =>
       roleNames.some(r => r.includes(ddo))
@@ -39,7 +41,8 @@ export async function fetchSchemeNameForDDO(departmentValue, setMasterData, role
       schemeNames: (data.items || []).map(s => ({
         id: s.id,
         name: s.schemeName,
-        code: s.schemeCode
+        code: s.schemeCode,
+        schemeType: s.schemeType || ""
       }))
     }));
 

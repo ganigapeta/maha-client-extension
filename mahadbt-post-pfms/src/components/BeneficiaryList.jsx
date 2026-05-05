@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'; import BeneficiaryFilter from './BeneficiaryFilter';
 import { getUserRolesById } from '../api/fetch-role';
 import BeneficiaryTable from './BeneficiaryTable';
+import { getLiferayUserId, isSignedIn } from '../config';
 const BeneficiaryList = () => {
+  const MAX_RFT_PFX_FILE_SIZE = 2 * 1024 * 1024;
   const [scheme, setScheme] = useState(null);
   const [loginUserId, setLoginUserId] = useState(null);
   const [roles, setRoles] = useState(null);
@@ -11,9 +13,13 @@ const BeneficiaryList = () => {
   const [activeTab, setActiveTab] = useState("generate-rft");
 
   const [showRFTModal, setShowRFTModal] = useState(false);
+  const [rftPfxFile, setRftPfxFile] = useState(null);
   const [rftPassword, setRFTPassword] = useState("");
-  const [rftError, setRFTError] = useState("");
+  const [rftConfirmPassword, setRftConfirmPassword] = useState("");
+  const [rftFileError, setRftFileError] = useState("");
+  const [rftPasswordError, setRftPasswordError] = useState("");
   const [showRFTPassword, setShowRFTPassword] = useState(false);
+  const [showRFTConfirmPassword, setShowRFTConfirmPassword] = useState(false);
 
   const [rftRows, setRftRows] = useState([]);
   const [rftLoading, setRftLoading] = useState(false);
@@ -28,6 +34,16 @@ const BeneficiaryList = () => {
 
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
+  const resetRFTSignForm = () => {
+    setRftPfxFile(null);
+    setRFTPassword("");
+    setRftConfirmPassword("");
+    setRftFileError("");
+    setRftPasswordError("");
+    setShowRFTPassword(false);
+    setShowRFTConfirmPassword(false);
+  };
+
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 4000);
@@ -35,13 +51,13 @@ const BeneficiaryList = () => {
 
   const openRFTModal = (row) => {
     setSelectedRftRow(row);
-    setRFTPassword("");
-    setRFTError("");
-    setShowRFTPassword(false);
+    resetRFTSignForm();
     setShowRFTModal(true);
   };
 
   const closeRFTModal = () => {
+    resetRFTSignForm();
+    setSelectedRftRow(null);
     setShowRFTModal(false);
   };
 
@@ -60,7 +76,8 @@ const BeneficiaryList = () => {
         const roleName = String(role?.name || "").trim().toLowerCase();
         return (
           roleName.includes("pension ddo") ||
-          roleName.includes("assistance ddo")
+          roleName.includes("assistance ddo") ||
+          roleName.includes("wcdd ddo")
         );
       })?.name || ""
     )
@@ -70,7 +87,8 @@ const BeneficiaryList = () => {
     const normalized = String(matchedRoleName || "").trim().toLowerCase();
     return (
       normalized.includes("pension ddo") ||
-      normalized.includes("assistance ddo")
+      normalized.includes("assistance ddo") ||
+      normalized.includes("wcdd ddo")
     );
   }, [matchedRoleName]);
 
@@ -79,8 +97,8 @@ const BeneficiaryList = () => {
   useEffect(() => {
     const fetchUserRoles = async () => {
       try {
-        if (window.Liferay?.ThemeDisplay?.isSignedIn()) {
-          const userId = window.Liferay.ThemeDisplay.getUserId();
+        if (isSignedIn()) {
+          const userId = getLiferayUserId();
           setLoginUserId(userId);
           const userData = await getUserRolesById(userId);
           console.log("userData roleBriefs", userData?.roleBriefs, userData);
@@ -108,6 +126,7 @@ const BeneficiaryList = () => {
     showToast("RFT file is not available.", "error");
   };
 
+
   useEffect(() => {
     const fetchRftRows = async () => {
       if (!isDDORole) return;
@@ -119,15 +138,19 @@ const BeneficiaryList = () => {
           : "Special Assistance Schemes";
 
         // Step 1: get schemeConfigurators filtered by schemeType to get scheme codes
+        const isWCDDDDO = String(matchedRoleName).toLowerCase().includes("wcdd ddo");
+        const schemeFilter = isWCDDDDO
+          ? `schemeType eq '${schemeType}' and department eq '7873729'`
+          : `schemeType eq '${schemeType}'`;
+
         const schemeRes = await fetch(
-          `/o/c/schemeconfigurators?filter=${encodeURIComponent(`schemeType eq '${schemeType}'`)}&pageSize=200`,
-          {
-            headers: {
-              Accept: "application/json",
-              "x-csrf-token": window.Liferay?.authToken || "",
-            },
-            credentials: "include",
-          }
+          `/o/c/schemeconfigurators?filter=${encodeURIComponent(schemeFilter)}&pageSize=200`, {
+          headers: {
+            Accept: "application/json",
+            "x-csrf-token": window.Liferay?.authToken || "",
+          },
+          credentials: "include",
+        }
         );
         const schemeData = await schemeRes.json();
         const schemeItems = schemeData?.items || [];
@@ -136,7 +159,7 @@ const BeneficiaryList = () => {
         // Build a map of schemeCode -> description for quick lookup
         const schemeNameMap = {};
         schemeItems.forEach((s) => {
-          if (s.schemeCode) schemeNameMap[s.schemeCode] = s.description || s.schemeCode;
+          if (s.schemeCode) schemeNameMap[s.schemeCode] = s.schemeName || s.description || s.schemeCode;
         });
 
         if (schemeCodes.length === 0) {
@@ -146,11 +169,11 @@ const BeneficiaryList = () => {
         }
 
         // Step 2: fetch billmanagements filtered by those scheme codes + status
-        const schemeFilter = schemeCodes
+        const billSchemeFilter = schemeCodes
           .map((code) => `schemeCode eq '${code}'`)
           .join(" or ");
 
-        const filterStr = `(submittedStatus eq 'Completed' or submittedStatus eq 'Signed by DDO') and (${schemeFilter})`;
+        const filterStr = `(submittedStatus eq 'Completed' or submittedStatus eq 'Signed by DDO') and (${billSchemeFilter})`;
 
         const res = await fetch(
           `/o/c/billmanagements?filter=${encodeURIComponent(filterStr)}&pageSize=200&sort=dateCreated:desc`,
@@ -230,6 +253,7 @@ const BeneficiaryList = () => {
                       hasSNORole={hasSNORole}
                       isPensionRole={isPensionRole}
                       roleName={matchedRoleName}
+                      setSearchResults={setSearchResults}
                     />
                   </>
                 ) : (
@@ -342,6 +366,7 @@ const BeneficiaryList = () => {
               hasSNORole={hasSNORole}
               isPensionRole={isPensionRole}
               roleName={matchedRoleName}
+              setSearchResults={setSearchResults}
             />
           </>
         )}
@@ -368,21 +393,62 @@ const BeneficiaryList = () => {
                     onSubmit={async (e) => {
                       e.preventDefault();
 
-                      if (rftPassword !== "chef$123") {
-                        setRFTError("Invalid password");
+                      if (!selectedRftRow) {
+                        setRftPasswordError("RFT row is not selected.");
                         return;
                       }
 
-                      setRFTError("");
-                      setShowRFTModal(false);
+                      if (!rftPfxFile) {
+                        setRftFileError("Please choose a PFX file.");
+                        return;
+                      }
 
-                      if (!selectedRftRow) return;
+                      const isValidPfxFile =
+                        /\.(pfx|p12)$/i.test(rftPfxFile.name) ||
+                        rftPfxFile.type === "application/x-pkcs12" ||
+                        rftPfxFile.type === "application/pkcs12";
+
+                      if (!isValidPfxFile) {
+                        setRftPfxFile(null);
+                        setRftFileError("Only PFX/P12 files are allowed. Please upload a .pfx or .p12 file.");
+                        return;
+                      }
+
+                      if (rftPfxFile.size > MAX_RFT_PFX_FILE_SIZE) {
+                        setRftPfxFile(null);
+                        setRftFileError("PFX file size must be 2 MB or less.");
+                        return;
+                      }
+
+                      if (!rftPassword || !rftConfirmPassword) {
+                        setRftPasswordError("Please enter and confirm the PFX password.");
+                        return;
+                      }
+
+                      if (rftPassword !== rftConfirmPassword) {
+                        setRftPasswordError("Password and confirmation password do not match.");
+                        return;
+                      }
+
+                      setRftFileError("");
+                      setRftPasswordError("");
+
+                      const pdfUrl = selectedRftRow.beamsPdfUrl;
+                      if (!pdfUrl) {
+                        setRftPasswordError("RFT file is not available.");
+                        return;
+                      }
 
                       try {
-                        // Step 1: fetch existing PDF from beamsPdfUrl as blob → base64
-                        const pdfRes = await fetch(selectedRftRow.beamsPdfUrl, {
+                        // Step 1: fetch existing PDF from beamsPdfUrl as blob -> base64
+                        const pdfRes = await fetch(pdfUrl, {
                           credentials: "include",
                         });
+
+                        if (!pdfRes.ok) {
+                          throw new Error("Failed to load the RFT PDF");
+                        }
+
                         const pdfBlob = await pdfRes.blob();
                         const base64Pdf = await new Promise((resolve, reject) => {
                           const reader = new FileReader();
@@ -392,22 +458,31 @@ const BeneficiaryList = () => {
                         });
 
                         const fileName = `RFT_SIGNED_${selectedRftRow.billNumber || selectedRftRow.id}.pdf`;
+                        const requestBlob = new Blob(
+                          [
+                            JSON.stringify({
+                              base64Pdf,
+                              fileName,
+                              password: rftPassword,
+                              billId: selectedRftRow.id,
+                            }),
+                          ],
+                          { type: "application/json" }
+                        );
 
-                        // Step 2: call headless sign API
+                        // Step 2: call headless sign API with uploaded PFX
+                        const formData = new FormData();
+                        formData.append("pdfPayload", requestBlob, "pdfPayload.json");
+                        formData.append("pfxFile", rftPfxFile, rftPfxFile.name || "certificate.pfx");
+
                         const signRes = await fetch("/o/mhdbt-headless-service/v1.0/pdf/sign", {
                           method: "POST",
                           headers: {
                             Accept: "application/json",
-                            "Content-Type": "application/json",
                             "x-csrf-token": window.Liferay?.authToken || "",
                           },
                           credentials: "include",
-                          body: JSON.stringify({
-                            base64Pdf,
-                            fileName,
-                            password: rftPassword,
-                            billId: selectedRftRow.id,
-                          }),
+                          body: formData,
                         });
 
                         const signJson = await signRes.json();
@@ -441,22 +516,77 @@ const BeneficiaryList = () => {
                           )
                         );
 
+                        closeRFTModal();
                         showToast("RFT signed successfully by DDO.", "success");
                       } catch (err) {
                         console.error("RFT signing error:", err);
-                        showToast("Failed to sign RFT. Please try again.", "error");
+                        setRftPasswordError(err?.message || "Failed to sign RFT. Please try again.");
                       }
                     }}
                   >
                     <div className="modal-body">
-                      <label className="form-label">Enter password</label>
+                      <label htmlFor="rftPfxFile" className="form-label">Select PFX file to upload <span className="text-danger">*</span></label>
+                      <input
+                        id="rftPfxFile"
+                        name="rftPfxFile"
+                        type="file"
+                        className="form-control mb-3"
+                        accept=".pfx,.p12,application/x-pkcs12"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+
+                          if (!file) {
+                            setRftPfxFile(null);
+                            setRftFileError("");
+                            return;
+                          }
+
+                          const isValidPfxFile =
+                            /\.(pfx|p12)$/i.test(file.name) ||
+                            file.type === "application/x-pkcs12" ||
+                            file.type === "application/pkcs12";
+
+                          if (!isValidPfxFile) {
+                            setRftPfxFile(null);
+                            setRftFileError("Please upload only .pfx or .p12 file.");
+                            e.target.value = "";
+                            return;
+                          }
+
+                          if (file.size > MAX_RFT_PFX_FILE_SIZE) {
+                            setRftPfxFile(null);
+                            setRftFileError("PFX file size must be 2 MB or less.");
+                            e.target.value = "";
+                            return;
+                          }
+
+                          setRftPfxFile(file);
+                          setRftFileError("");
+                        }}
+                      />
+                      {rftPfxFile && (
+                        <div className="small text-muted mb-2">
+                          Selected file: {rftPfxFile.name}
+                        </div>
+                      )}
+                      <div className="small text-muted mb-2">
+                        Maximum PFX size: 2 MB
+                      </div>
+                      {rftFileError && <div className="text-danger small mb-2">{rftFileError}</div>}
+
+                      <label htmlFor="rftPassword" className="form-label">Enter Password of PFX file <span className="text-danger">*</span></label>
 
                       <div className="input-group">
                         <input
+                          id="rftPassword"
+                          name="rftPassword"
                           type={showRFTPassword ? "text" : "password"}
                           className="form-control"
                           value={rftPassword}
-                          onChange={(e) => setRFTPassword(e.target.value)}
+                          onChange={(e) => {
+                            setRFTPassword(e.target.value);
+                            setRftPasswordError("");
+                          }}
                           placeholder="Enter password"
                         />
 
@@ -464,13 +594,40 @@ const BeneficiaryList = () => {
                           type="button"
                           className="btn btn-outline-secondary"
                           onClick={() => setShowRFTPassword((prev) => !prev)}
+                          aria-label={showRFTPassword ? "Hide password" : "Show password"}
                         >
-                          {showRFTPassword ? "Hide" : "Show"}
+                          <i className={`bi ${showRFTPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
+                        </button>
+                      </div>
+                      <br />
+                      <label htmlFor="rftConfirmPassword" className="form-label">Enter Confirmation Password of PFX file <span className="text-danger">*</span></label>
+                      <div className="input-group">
+                        <input
+                          id="rftConfirmPassword"
+                          name="rftConfirmPassword"
+                          autoComplete="new-password"
+                          type={showRFTConfirmPassword ? "text" : "password"}
+                          className="form-control"
+                          value={rftConfirmPassword}
+                          onChange={(e) => {
+                            setRftConfirmPassword(e.target.value);
+                            setRftPasswordError("");
+                          }}
+                          placeholder="Confirm password"
+                        />
+
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary"
+                          onClick={() => setShowRFTConfirmPassword((prev) => !prev)}
+                          aria-label={showRFTConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                          <i className={`bi ${showRFTConfirmPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
                         </button>
                       </div>
 
-                      {rftError && (
-                        <div className="text-danger small mt-2">{rftError}</div>
+                      {rftPasswordError && (
+                        <div className="text-danger small mt-2">{rftPasswordError}</div>
                       )}
                     </div>
 

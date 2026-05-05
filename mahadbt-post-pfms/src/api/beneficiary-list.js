@@ -4,9 +4,8 @@ export async function fetchBeneficiaryList(
   isPensionOrAssistanceDDO = false,
 ) {
   try {
-    const departmentId = data.departmentName?.split("_")[0];
-    const schemeName = data.schemeName?.split("_")[1];
-    const fetchSchemeData = await fetchSchemeName(departmentId, schemeName);
+    const schemeConfiguratorId = data.schemeName?.split("_")[0];
+    const fetchSchemeData = await fetchSchemeById(schemeConfiguratorId);
     console.log(
       "Scheme Data based on Department and Scheme Name::::",
       fetchSchemeData,
@@ -29,7 +28,9 @@ export async function fetchBeneficiaryList(
         : "Completed";
 
       const billRes = await fetch(
-        `/o/c/billmanagements?filter=${encodeURIComponent(`schemeCode eq '${schemeCode}' and submittedStatus eq '${statusFilter}'`)}&pageSize=200`,
+        `/o/c/billmanagements?filter=${encodeURIComponent(
+          `schemeCode eq '${schemeCode}' and submittedStatus eq '${statusFilter}' and submittedStatus ne 'XML Generated'`,
+        )}&pageSize=200`,
         {
           headers: {
             Accept: "application/json",
@@ -55,8 +56,10 @@ export async function fetchBeneficiaryList(
     const batchFilter = validBatchIDs
       .map((id) => `batchID eq '${id}'`)
       .join(" or ");
+
     const filterStr = `status eq 0 and (${batchFilter})`;
     const filter = encodeURIComponent(filterStr);
+
     const response = await fetch(`${url}?filter=${filter}&pageSize=200`, {
       method: "GET",
       headers: {
@@ -71,8 +74,47 @@ export async function fetchBeneficiaryList(
     const enrichedItems = await enrichBeneficiariesWithBillData(
       result?.items || [],
     );
+
+    const { year, installment } = data;
+    const isLekLadkiInst = String(installment || "").startsWith("Installment");
+    const instNumber = isLekLadkiInst
+      ? parseInt(installment.replace("Installment ", "").trim(), 10) || 1
+      : 0;
+
+    const filtered = enrichedItems.filter((item) => {
+      const appNo = item.applicationNo || item.applicationreferencenumber || "";
+      const financialYear = appNo.substring(0, 4);
+
+      if (year && financialYear !== year) return false;
+
+      // Monthly benefit filter
+      if (installment?.startsWith("Monthly Benefit_")) {
+        const [, monthName] = installment.split("_");
+        const targetMonth = new Date(`${monthName} 1, 2000`).getMonth();
+        const itemDate = item.dateCreated ? new Date(item.dateCreated) : null;
+        if (!itemDate) return false;
+        if (itemDate.getMonth() !== targetMonth) return false;
+      }
+
+      // Lek Ladki installment filter
+      if (isLekLadkiInst) {
+        const itemInstallmentStatus = Number(item.installmentStatus ?? -1);
+        return itemInstallmentStatus === instNumber;
+      }
+
+      // 1st/2nd installment filter
+      if (installment === "1st Installment") {
+        return Number(item.installmentStatus ?? 1) === 1;
+      }
+      if (installment === "2nd Installment") {
+        return Number(item.installmentStatus ?? 0) === 2;
+      }
+
+      return true;
+    });
+
     setScheme(fetchSchemeData[0] || {});
-    return enrichedItems;
+    return filtered;
   } catch (err) {
     console.error("Error fetching departments:", err);
     return [];
@@ -152,10 +194,31 @@ async function fetchBillManagementByBatchId(batchId) {
   }
 }
 
+async function fetchSchemeById(schemeId) {
+  try {
+    const response = await fetch(`/o/c/schemeconfigurators/${schemeId}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "x-csrf-token": window.Liferay?.authToken || "",
+      },
+      credentials: "include",
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return [data];
+  } catch (err) {
+    console.error("Error fetching scheme by id:", err);
+    return [];
+  }
+}
+
 export async function fetchSchemeName(departmentId, schemeName) {
   try {
     const response = await fetch(
-      `/o/c/schemeconfigurators/?filter= schemeName eq '${schemeName}' and department eq '${departmentId}'`,
+      `/o/c/schemeconfigurators/?filter=schemeName eq '${schemeName}'`,
+
       {
         method: "GET",
         headers: {

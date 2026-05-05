@@ -6,11 +6,14 @@ export async function getUserRolesById(userId) {
     const response = await fetch(
       `/o/headless-admin-user/v1.0/user-accounts/${userId}`,
       {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          // "Authorization" : `Bearer ${token}`,
+          "x-csrf-token": window.Liferay?.authToken || "",
+          "Accept" : "application/json",
+         "Content-Type": "application/json",
         },
-        credentials: "omit"
+        credentials: "include"
       }
     );
     console.log("Response of getUserRolesById::::::::::",response,"User::::::::::::::",userId);

@@ -141,6 +141,121 @@ async function buildPensionSNOContext({ scheme = {}, beneficiaries = [] } = {}) 
   };
 }
 
+const aadhaarRefCache = new Map();
+
+async function parseErrorText(response) {
+  try {
+    return await response.text();
+  } catch (_error) {
+    return "";
+  }
+}
+
+async function getAadhaar(aadhaarRefNumber) {
+  const safeAadhaarRefNumber = getStringValue(aadhaarRefNumber);
+
+  if (!safeAadhaarRefNumber) {
+    return "";
+  }
+
+  const response = await fetch(
+    "/o/mhdbt-headless-service/v1.0/get-aadhaar-by-aadhaarref",
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "x-csrf-token": window.Liferay?.authToken || "",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        aadhaarOrRefNumber: safeAadhaarRefNumber,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await parseErrorText(response);
+    throw new Error(
+      `Failed to get Aadhaar number from ref: ${response.status} ${errorText || ""}`
+    );
+  }
+
+  const data = await response.json();
+  return getStringValue(
+    data?.aadhaarOrRefNumber ||
+      data?.data?.aadhaarOrRefNumber ||
+      data?.result?.aadhaarOrRefNumber
+  );
+}
+
+async function fetchCitizenDashboardKpiByApplicationRef(applicationRefNumber) {
+  const safeApplicationRef = getStringValue(applicationRefNumber);
+
+  if (!safeApplicationRef) {
+    return null;
+  }
+
+  const filter = `applicationrefencenumber eq '${safeApplicationRef.replace(
+    /'/g,
+    "\\'"
+  )}'`;
+  const response = await fetch(
+    `/o/c/citizendashboardkpis?filter=${encodeURIComponent(
+      filter
+    )}&page=1&pageSize=1`,
+    buildJsonFetchOptions()
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch citizen dashboard KPI: ${response.status}`
+    );
+  }
+
+  const data = await response.json();
+  return data.items?.[0] || null;
+}
+
+function resolveInstructionId(item = {}) {
+  return getMappedValue(item?.applicationNo, item?.applicationreferencenumber);
+}
+
+async function resolveAadhaarNumber(item = {}) {
+  const applicationRefNumber = resolveInstructionId(item);
+
+  if (!applicationRefNumber) {
+    return "";
+  }
+
+  if (aadhaarRefCache.has(applicationRefNumber)) {
+    return aadhaarRefCache.get(applicationRefNumber);
+  }
+
+  try {
+    const kpiEntry = await fetchCitizenDashboardKpiByApplicationRef(
+      applicationRefNumber
+    );
+    const aadhaarRefNumber = getMappedValue(kpiEntry?.aadhaarRefNumber);
+
+    if (!aadhaarRefNumber) {
+      aadhaarRefCache.set(applicationRefNumber, "");
+      return "";
+    }
+
+    const aadhaarNumber = await getAadhaar(aadhaarRefNumber);
+    aadhaarRefCache.set(applicationRefNumber, aadhaarNumber);
+    return aadhaarNumber;
+  } catch (error) {
+    console.error(
+      `Error resolving Aadhaar number for application ref ${applicationRefNumber}:`,
+      error
+    );
+    aadhaarRefCache.set(applicationRefNumber, "");
+    return "";
+  }
+}
+
 const DEFAULT_REVIEW_ENTRY_COUNT = 10;
 
 function buildDefaultReviewDebitData() {
@@ -174,6 +289,7 @@ function buildSimplePensionSNOXML({
   beneficiaries = [],
   ddoMaster = null,
   ddoSchemeMapping = null,
+  aadhaarNumbers = [],
 } = {}) {
   const safeBeneficiaries = Array.isArray(beneficiaries) ? beneficiaries : [];
   const defaultReviewCreditData = buildDefaultReviewCreditData();
@@ -274,6 +390,7 @@ function buildSimplePensionSNOXML({
         "OBC2DM4"
       ),
       AADHAAR_NO: getMappedValue(
+        aadhaarNumbers[index],
         beneficiary?.aadhaarNo,
         beneficiary?.aadhaarNumber,
         beneficiary?.aadhaar,
@@ -330,12 +447,17 @@ export const generateAndDownloadPensionSNOXML = async ({ scheme, totalAmount, be
   console.log("Generating Pension SNO XML for scheme:", scheme);
   try {
     const context = await buildPensionSNOContext({ scheme, beneficiaries });
+    const aadhaarNumbers = await Promise.all(
+      beneficiaries.map((beneficiary) => resolveAadhaarNumber(beneficiary))
+    );
+
     const { xml: finalXml, debitReference } = buildSimplePensionSNOXML({
       scheme,
       totalAmount,
       beneficiaries,
       ddoMaster: context.ddoMaster,
       ddoSchemeMapping: context.ddoSchemeMapping,
+      aadhaarNumbers,
     });
     downloadXMLFile(finalXml, `${debitReference}.xml`);
   } catch (error) {

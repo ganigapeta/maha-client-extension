@@ -35,6 +35,25 @@
 //   }
 // ];
 
+async function fetchDDOMasterById(id) {
+  try {
+    const response = await fetch(`/o/c/ddomasters/${id}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "x-csrf-token": window.Liferay?.authToken || "",
+      },
+      credentials: "include",
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching DDO master by id ${id}:`, error);
+    return null;
+  }
+}
+
 function getStringValue(value) {
   return String(value ?? "").trim();
 }
@@ -98,10 +117,9 @@ async function resolveCdtrAcctSOSE(item = {}) {
   }
 
   try {
-    const kpiEntry = await fetchCitizenDashboardKpiByApplicationRef(applicationRefNumber);
-    const aadhaarRefNumber = getMappedValue(
-      kpiEntry?.aadhaarRefNumber,
-    );
+    const kpiEntry =
+      await fetchCitizenDashboardKpiByApplicationRef(applicationRefNumber);
+    const aadhaarRefNumber = getMappedValue(kpiEntry?.aadhaarRefNumber);
 
     if (!aadhaarRefNumber) {
       aadhaarRefCache.set(applicationRefNumber, "");
@@ -114,7 +132,7 @@ async function resolveCdtrAcctSOSE(item = {}) {
   } catch (error) {
     console.error(
       `Error resolving Aadhaar number for application ref ${applicationRefNumber}:`,
-      error
+      error,
     );
     aadhaarRefCache.set(applicationRefNumber, "");
     return "";
@@ -130,18 +148,11 @@ function resolveToDate() {
 }
 
 function resolveInstructionId(item = {}) {
-  return getMappedValue(
-    item?.applicationNo,
-    item?.applicationreferencenumber,
-  );
+  return getMappedValue(item?.applicationNo, item?.applicationreferencenumber);
 }
 
 function resolveCentreAmount(item = {}) {
-  return getMappedValue(
-    item?.centreAmount,
-    item?.ctreAmt,
-    item?.centerAmount,
-  );
+  return getMappedValue(item?.centreAmount, item?.ctreAmt, item?.centerAmount);
 }
 
 function resolveBranchId(ddoSchemeMapping = {}) {
@@ -153,31 +164,19 @@ function resolveBranchId(ddoSchemeMapping = {}) {
 }
 
 function resolveCreditorTitle(item = {}) {
-  return getMappedValue(
-    item?.title,
-    item?.cdtrTitle,
-  );
+  return getMappedValue(item?.title, item?.cdtrTitle);
 }
 
 function resolvePurposeCentreAmount(item = {}) {
-  return getMappedValue(
-    item?.purposeCentreAmount,
-    item?.purpCtreAmt,
-  );
+  return getMappedValue(item?.purposeCentreAmount, item?.purpCtreAmt);
 }
 
 function resolvePurposeProvinceAmount(item = {}) {
-  return getMappedValue(
-    item?.purposeProvinceAmount,
-    item?.purpPrvcAmt,
-  );
+  return getMappedValue(item?.purposeProvinceAmount, item?.purpPrvcAmt);
 }
 
 function resolvePurposeInstructedAmount(item = {}) {
-  return getMappedValue(
-    item?.purposeInstructedAmount,
-    item?.purpInstdAmt,
-  );
+  return getMappedValue(item?.purposeInstructedAmount, item?.purpInstdAmt);
 }
 
 function resolveRemittanceSourceId(item = {}, ddoSchemeMapping = {}) {
@@ -206,11 +205,11 @@ function buildJsonFetchOptions() {
   return {
     method: "GET",
     headers: {
-      "Accept": "application/json",
+      Accept: "application/json",
       "Content-Type": "application/json",
-      "x-csrf-token": window.Liferay?.authToken || ""
+      "x-csrf-token": window.Liferay?.authToken || "",
     },
-    credentials: "include"
+    credentials: "include",
   };
 }
 
@@ -242,13 +241,13 @@ async function getAadhaar(aadhaarRefNumber) {
       body: JSON.stringify({
         aadhaarOrRefNumber: safeAadhaarRefNumber,
       }),
-    }
+    },
   );
 
   if (!response.ok) {
     const errorText = await parseErrorText(response);
     throw new Error(
-      `Failed to get Aadhaar number from ref: ${response.status} ${errorText || ""}`
+      `Failed to get Aadhaar number from ref: ${response.status} ${errorText || ""}`,
     );
   }
 
@@ -256,7 +255,7 @@ async function getAadhaar(aadhaarRefNumber) {
   return getStringValue(
     data?.aadhaarOrRefNumber ||
       data?.data?.aadhaarOrRefNumber ||
-      data?.result?.aadhaarOrRefNumber
+      data?.result?.aadhaarOrRefNumber,
   );
 }
 
@@ -270,11 +269,13 @@ async function fetchCitizenDashboardKpiByApplicationRef(applicationRefNumber) {
   const filter = `applicationrefencenumber eq '${safeApplicationRef.replace(/'/g, "\\'")}'`;
   const response = await fetch(
     `/o/c/citizendashboardkpis?filter=${encodeURIComponent(filter)}&page=1&pageSize=1`,
-    buildJsonFetchOptions()
+    buildJsonFetchOptions(),
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch citizen dashboard KPI: ${response.status}`);
+    throw new Error(
+      `Failed to fetch citizen dashboard KPI: ${response.status}`,
+    );
   }
 
   const data = await response.json();
@@ -290,11 +291,13 @@ async function fetchUserAccountById(userId) {
 
   const response = await fetch(
     `/o/headless-admin-user/v1.0/user-accounts/${safeUserId}`,
-    buildJsonFetchOptions()
+    buildJsonFetchOptions(),
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch user account ${safeUserId}: ${response.status}`);
+    throw new Error(
+      `Failed to fetch user account ${safeUserId}: ${response.status}`,
+    );
   }
 
   return response.json();
@@ -302,25 +305,29 @@ async function fetchUserAccountById(userId) {
 
 function extractCustomFieldValue(userAccount = {}, fieldName) {
   const normalizedFieldName = getStringValue(fieldName).toLowerCase();
-  const customFields = Array.isArray(userAccount?.customFields) ? userAccount.customFields : [];
+  const customFields = Array.isArray(userAccount?.customFields)
+    ? userAccount.customFields
+    : [];
 
   const match = customFields.find((field) => {
     return getStringValue(field?.name).toLowerCase() === normalizedFieldName;
   });
 
-  return getStringValue(match?.customValue?.data || match?.value || match?.data);
+  return getStringValue(
+    match?.customValue?.data || match?.value || match?.data,
+  );
 }
 
 async function fetchCPSMSId(item = {}) {
   const existingId = getStringValue(item?.CPSMSId || item?.cpsmsId);
-    //console.log("existingId number is",existingId);
+  //console.log("existingId number is",existingId);
 
   if (existingId) {
     return existingId;
   }
 
   const applicationRefNumber = resolveInstructionId(item);
- // console.log("reference number is",applicationRefNumber);
+  // console.log("reference number is",applicationRefNumber);
   if (!applicationRefNumber) {
     return "";
   }
@@ -330,9 +337,12 @@ async function fetchCPSMSId(item = {}) {
   }
 
   try {
-    const kpiEntry = await fetchCitizenDashboardKpiByApplicationRef(applicationRefNumber);
-    const loginUserId = getStringValue(kpiEntry?.loginUserId || kpiEntry?.loginuserid);
-   //console.log("loged in id",loginUserId);
+    const kpiEntry =
+      await fetchCitizenDashboardKpiByApplicationRef(applicationRefNumber);
+    const loginUserId = getStringValue(
+      kpiEntry?.loginUserId || kpiEntry?.loginuserid,
+    );
+    //console.log("loged in id",loginUserId);
 
     if (!loginUserId) {
       cpsmsIdCache.set(applicationRefNumber, "");
@@ -347,14 +357,17 @@ async function fetchCPSMSId(item = {}) {
 
     const userAccount = await fetchUserAccountById(loginUserId);
     //console.log("userAccount in id",userAccount);
-    const cpsmsId = extractCustomFieldValue(userAccount, "Pfms beneficiary code");
-// console.log("cpsmsId in id",cpsmsId);
+    const cpsmsId = extractCustomFieldValue(
+      userAccount,
+      "Pfms beneficiary code",
+    );
+    // console.log("cpsmsId in id",cpsmsId);
     userCustomFieldCache.set(loginUserId, cpsmsId);
     cpsmsIdCache.set(applicationRefNumber, cpsmsId);
 
     return cpsmsId;
   } catch (error) {
- //   console.error(`Error resolving CPSMSId for application ref ${applicationRefNumber}:`, error);
+    //   console.error(`Error resolving CPSMSId for application ref ${applicationRefNumber}:`, error);
     cpsmsIdCache.set(applicationRefNumber, "");
     return "";
   }
@@ -375,14 +388,21 @@ function buildDynamicDBTBeneficiaries(
       btchBookg: "true",
       ReqdExctnDt: getCurrentExecutionDate(),
       InstrId: resolveInstructionId(item),
-      endToEndId: getStringValue(item?.applicationNo || item?.applicationreferencenumber || item?.id) || `PFMS-${Date.now()}-${index + 1}`,
+      endToEndId:
+        getStringValue(
+          item?.applicationNo || item?.applicationreferencenumber || item?.id,
+        ) || `PFMS-${Date.now()}-${index + 1}`,
       CtreAmt: resolveCentreAmount(item),
       PrvcAmt: amount,
       InstdAmt: amount,
       BICFI: resolveBICFI(ddoSchemeMapping),
       BrnchId: resolveBranchId(ddoSchemeMapping),
-      PrTryId: getStringValue(item?.applicationNo || item?.applicationreferencenumber || item?.id),
-      CPSMSId: getStringValue(cpsmsIds[index] || item?.CPSMSId || item?.cpsmsId),
+      PrTryId: getStringValue(
+        item?.applicationNo || item?.applicationreferencenumber || item?.id,
+      ),
+      CPSMSId: getStringValue(
+        cpsmsIds[index] || item?.CPSMSId || item?.cpsmsId,
+      ),
       Cdtr_TP: getStringValue(ddoSchemeMapping?.beneficiaryType),
       Cdtr_Titl: resolveCreditorTitle(item),
       Cdtr_Nm: getStringValue(item?.applicantName || item?.creator?.name),
@@ -409,7 +429,7 @@ function buildDynamicDBTBeneficiaries(
 
 function getDepartmentCodeFromScheme(scheme) {
   const directDepartmentCode = String(
-    scheme?.departmentCode || scheme?.departmentcode || ""
+    scheme?.departmentCode || scheme?.departmentcode || "",
   ).trim();
 
   if (directDepartmentCode) {
@@ -423,14 +443,19 @@ function getDepartmentCodeFromScheme(scheme) {
 }
 
 function getDDOCodeFromBeneficiaries(beneficiaries = []) {
-  const uniqueDdoCodes = [...new Set(
-    beneficiaries
-      .map((item) => String(item?.ddoCode || "").trim())
-      .filter(Boolean)
-  )];
+  const uniqueDdoCodes = [
+    ...new Set(
+      beneficiaries
+        .map((item) => String(item?.ddoCode || "").trim())
+        .filter(Boolean),
+    ),
+  ];
 
   if (uniqueDdoCodes.length > 1) {
-    console.warn("Multiple DDO codes found in beneficiaries. Using the first one.", uniqueDdoCodes);
+    console.warn(
+      "Multiple DDO codes found in beneficiaries. Using the first one.",
+      uniqueDdoCodes,
+    );
   }
 
   return uniqueDdoCodes[0] || "";
@@ -443,12 +468,12 @@ async function fetchDDOMasterByCode(ddoCode) {
       {
         method: "GET",
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
           "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || ""
+          "x-csrf-token": window.Liferay?.authToken || "",
         },
-        credentials: "include"
-      }
+        credentials: "include",
+      },
     );
 
     if (!response.ok) {
@@ -463,19 +488,21 @@ async function fetchDDOMasterByCode(ddoCode) {
   }
 }
 
-async function fetchDDOSchemeMappingBySchemeConfiguratorId(schemeConfiguratorId) {
+async function fetchDDOSchemeMappingBySchemeConfiguratorId(
+  schemeConfiguratorId,
+) {
   try {
     const response = await fetch(
       `/o/c/ddoschememappings?nestedFields=ddoMaster,schemeConfigurator&page=1&pageSize=20&search=${encodeURIComponent(schemeConfiguratorId)}`,
       {
         method: "GET",
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
           "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || ""
+          "x-csrf-token": window.Liferay?.authToken || "",
         },
-        credentials: "include"
-      }
+        credentials: "include",
+      },
     );
 
     if (!response.ok) {
@@ -487,7 +514,7 @@ async function fetchDDOSchemeMappingBySchemeConfiguratorId(schemeConfiguratorId)
   } catch (error) {
     console.error(
       `Error fetching DDO scheme mapping for scheme configurator ${schemeConfiguratorId}:`,
-      error
+      error,
     );
     return null;
   }
@@ -495,13 +522,20 @@ async function fetchDDOSchemeMappingBySchemeConfiguratorId(schemeConfiguratorId)
 
 async function buildPFMSPayload({ scheme, totalAmount, beneficiaries = [] }) {
   const ddoCode = getDDOCodeFromBeneficiaries(beneficiaries);
-  const ddoMaster = ddoCode ? await fetchDDOMasterByCode(ddoCode) : null;
+  let ddoMaster = ddoCode ? await fetchDDOMasterByCode(ddoCode) : null;
   const ddoSchemeMapping = scheme?.id
     ? await fetchDDOSchemeMappingBySchemeConfiguratorId(scheme.id)
     : null;
-  const cpsmsIds = await Promise.all(beneficiaries.map((beneficiary) => fetchCPSMSId(beneficiary)));
+  if (!ddoMaster && ddoSchemeMapping?.r_dDOMapping_c_ddoMasterId) {
+    ddoMaster = await fetchDDOMasterById(
+      ddoSchemeMapping.r_dDOMapping_c_ddoMasterId,
+    );
+  }
+  const cpsmsIds = await Promise.all(
+    beneficiaries.map((beneficiary) => fetchCPSMSId(beneficiary)),
+  );
   const cdtrAcctSoses = await Promise.all(
-    beneficiaries.map((beneficiary) => resolveCdtrAcctSOSE(beneficiary))
+    beneficiaries.map((beneficiary) => resolveCdtrAcctSOSE(beneficiary)),
   );
   const dynamicDBTBeneficiaries = buildDynamicDBTBeneficiaries(
     beneficiaries,
@@ -513,14 +547,12 @@ async function buildPFMSPayload({ scheme, totalAmount, beneficiaries = [] }) {
 
   return {
     departmentWithLocation: getStringValue(ddoSchemeMapping?.accountHolderName),
-    departmentCode: getStringValue(
-       ddoMaster?.initiatingPartyCode // || ddoSchemeMapping?.r_dDOMapping_c_ddoMaster?.initiatingPartyCode
-    ),
+    departmentCode: getStringValue(ddoMaster?.initiatingPartyCode),
     schemeCode: getStringValue(
-      ddoSchemeMapping?.integrationSchemeCode || scheme?.schemeCode || ""
+      ddoSchemeMapping?.integrationSchemeCode || scheme?.schemeCode || "",
     ),
     totalAmount: (Number(totalAmount) || 0).toFixed(2),
-    DBTbeneficiaries: dynamicDBTBeneficiaries
+    DBTbeneficiaries: dynamicDBTBeneficiaries,
   };
 }
 
@@ -531,13 +563,13 @@ async function generatePFMSPaymentXML(payload) {
       {
         method: "POST",
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
           "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || ""
+          "x-csrf-token": window.Liferay?.authToken || "",
         },
         body: JSON.stringify(payload),
-        credentials: "include"
-      }
+        credentials: "include",
+      },
     );
 
     if (!response.ok) {
@@ -551,7 +583,7 @@ async function generatePFMSPaymentXML(payload) {
     return {
       status: response.status,
       xml: xmlString,
-      success: true
+      success: true,
     };
   } catch (error) {
     console.error("Error:", error);
@@ -559,14 +591,86 @@ async function generatePFMSPaymentXML(payload) {
     return {
       status: 400,
       success: false,
-      error: "Failed to generate PFMS XML"
+      error: "Failed to generate PFMS XML",
     };
   }
 }
 
-export const generateAndDownloadXML = async ({ scheme, totalAmount, beneficiaries = [] } = {}) => {
+async function generatePFMSPaymentXMLWithPfx({
+  payload,
+  pfxFile,
+  password,
+  confirmPassword,
+}) {
   try {
-    const payload = await buildPFMSPayload({ scheme, totalAmount, beneficiaries });
+    const requestBlob = new Blob(
+      [
+        JSON.stringify({
+          password,
+          payload,
+        }),
+      ],
+      {
+        type: "application/json",
+      },
+    );
+
+    const formData = new FormData();
+    formData.append("request", requestBlob, "request.json");
+    formData.append("pfxFile", pfxFile, pfxFile?.name || "certificate.pfx");
+
+    const response = await fetch(
+      "/o/mhdbt-headless-service/v1.0/generate-pfms-payment-xml-with-pfx",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "x-csrf-token": window.Liferay?.authToken || "",
+        },
+        body: formData,
+        credentials: "include",
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Error ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    if (data?.statusCode && data.statusCode !== "200") {
+      throw new Error(data?.bytes || "Failed to generate PFMS XML");
+    }
+
+    const xmlString = data.bytes;
+
+    return {
+      status: response.status,
+      xml: xmlString,
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error:", error);
+
+    return {
+      status: 400,
+      success: false,
+      error: "Invalid PFX password or corrupted PFX file",
+    };
+  }
+}
+
+export const generateAndDownloadXML = async ({
+  scheme,
+  totalAmount,
+  beneficiaries = [],
+} = {}) => {
+  try {
+    const payload = await buildPFMSPayload({
+      scheme,
+      totalAmount,
+      beneficiaries,
+    });
 
     if (!payload.departmentWithLocation) {
       throw new Error("Department with location is required for PFMS XML");
@@ -580,7 +684,10 @@ export const generateAndDownloadXML = async ({ scheme, totalAmount, beneficiarie
       throw new Error("Scheme code is required for PFMS XML");
     }
 
-    if (!Array.isArray(payload.DBTbeneficiaries) || payload.DBTbeneficiaries.length === 0) {
+    if (
+      !Array.isArray(payload.DBTbeneficiaries) ||
+      payload.DBTbeneficiaries.length === 0
+    ) {
       throw new Error("At least one beneficiary is required for PFMS XML");
     }
 
@@ -592,15 +699,14 @@ export const generateAndDownloadXML = async ({ scheme, totalAmount, beneficiarie
 
     const cleanedXml = response.xml
       .replace(/\\"/g, '"')
-      .replace(/\\r\\n/g, '\n');
+      .replace(/\\r\\n/g, "\n");
 
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(cleanedXml, "application/xml");
 
     const parseError = xmlDoc.getElementsByTagName("parsererror");
     if (parseError.length > 0) {
-      console.error("Invalid XML", parseError);
-      return;
+      throw new Error("Backend returned invalid XML");
     }
 
     const serializer = new XMLSerializer();
@@ -622,3 +728,91 @@ export const generateAndDownloadXML = async ({ scheme, totalAmount, beneficiarie
   }
 };
 
+export const generateAndDownloadXMLWithPfx = async ({
+  scheme,
+  totalAmount,
+  beneficiaries = [],
+  pfxFile,
+  password,
+  confirmPassword,
+} = {}) => {
+  try {
+    const payload = await buildPFMSPayload({
+      scheme,
+      totalAmount,
+      beneficiaries,
+    });
+
+    if (!payload.departmentWithLocation) {
+      throw new Error("Department with location is required for PFMS XML");
+    }
+
+    if (!payload.departmentCode) {
+      throw new Error("Department code is required for PFMS XML");
+    }
+
+    if (!payload.schemeCode) {
+      throw new Error("Scheme code is required for PFMS XML");
+    }
+
+    if (
+      !Array.isArray(payload.DBTbeneficiaries) ||
+      payload.DBTbeneficiaries.length === 0
+    ) {
+      throw new Error("At least one beneficiary is required for PFMS XML");
+    }
+
+    if (!pfxFile) {
+      throw new Error("PFX file is required for PFMS XML");
+    }
+
+    if (!password) {
+      throw new Error("PFX password is required for PFMS XML");
+    }
+
+    if (password !== confirmPassword) {
+      throw new Error("Password and confirmation password do not match");
+    }
+
+    const response = await generatePFMSPaymentXMLWithPfx({
+      payload,
+      pfxFile,
+      password,
+      confirmPassword,
+    });
+
+    if (!response.success || !response.xml) {
+      throw new Error(response.error || "Failed to generate PFMS XML");
+    }
+
+    const cleanedXml = response.xml
+      .replace(/\\"/g, '"')
+      .replace(/\\r\\n/g, "\n");
+
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(cleanedXml, "application/xml");
+
+    const parseError = xmlDoc.getElementsByTagName("parsererror");
+    if (parseError.length > 0) {
+      throw new Error("Backend returned invalid XML");
+    }
+
+    const serializer = new XMLSerializer();
+    const finalXml = serializer.serializeToString(xmlDoc);
+
+    const blob = new Blob([finalXml], { type: "application/xml" });
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "pfms.xml";
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("XML generation with PFX failed:", error);
+    throw error;
+  }
+};
