@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getPicklistByERC } from './fetch-masters';
+import { buildHeadersExternal, getLiferayUserId } from '../config';
 
 const API_BASE_URL = process.env.REACT_APP_API_APL_URL || 'https://mahadbt2-qa-dashboard.quantela.com/apl';
 const API_BASE_URL_PREFIX = process.env.REACT_APP_API_APL_URL_PREFIX || '/v1';
@@ -14,11 +15,7 @@ const api = axios.create({
 // Add request interceptor for authentication
 api.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    console.log('API Request - User:', user);
-    if (user.user_id) {
-      config.headers['x-user-id'] = user.user_id;
-    }
+    config.headers['x-user-id'] = getLiferayUserId();
     return config;
   },
   (error) => Promise.reject(error)

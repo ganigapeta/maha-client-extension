@@ -1,3 +1,4 @@
+import { buildCreds, buildHeaders } from "../config";
 import { getAccessToken } from "./auth";
 
 
@@ -80,15 +81,15 @@ export async function getDepartment() {
 }
 
 
-const buildHeaders = () => ({
-  Accept: "application/json",
-  "Content-Type": "application/json",
-  Authorization: "Basic " + btoa("prabhudasu:root"),
-  // "x-csrf-token": window.Liferay?.authToken || ""
+// const buildHeaders = () => ({
+//   Accept: "application/json",
+//   "Content-Type": "application/json",
+//   Authorization: "Basic " + btoa("prabhudasu:root"),
+//   // "x-csrf-token": window.Liferay?.authToken || ""
 
-});
+// });
 
-const buildCreds = () => "include";
+// const buildCreds = () => "include";
 
 export async function getStates() {
   try {

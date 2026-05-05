@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import SchemeSearch from './SchemeSearch';
 import { fetchOfficeDetails, getUserRolesById } from '../services/fetch-masters';
+import { getLiferayUserId } from '../config';
 
 
 function Dashboard() {
@@ -17,9 +18,9 @@ function Dashboard() {
         // Get user ID from Liferay
          // Get user ID from Liferay
         // const userId = 3068014//3068014 -AFSO; //window.Liferay?.ThemeDisplay?.getUserId();
-        // const userId = 3068039//3068039 -DFSO; //window.Liferay?.ThemeDisplay?.getUserId();
+        //const userId = 3068039//3068039 -DFSO; //window.Liferay?.ThemeDisplay?.getUserId();
 
-        const userId = window.Liferay?.ThemeDisplay?.getUserId();
+        const userId = getLiferayUserId();
 
         if (!userId) {
           console.warn('No user ID found from Liferay');
