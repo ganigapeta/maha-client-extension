@@ -1,0 +1,17 @@
+{
+  "com.liferay.client.extension.type.configuration.CETConfiguration~mahadbt-disbursement-payment-apl" : {
+    ":configurator:policy" : "force",
+    "baseURL" : "${portalURL}/o/mahadbt-disbursement-payment-apl",
+    "buildTimestamp" : 1777972671120,
+    "description" : "",
+    "dxp.lxc.liferay.com.virtualInstanceId" : "default",
+    "name" : "mahadbt-disbursement-payment-apl",
+    "projectId" : "mahadbtdisbursementpaymentapl",
+    "projectName" : "mahadbt-disbursement-payment-apl",
+    "properties" : [ ],
+    "sourceCodeURL" : "",
+    "type" : "customElement",
+    "typeSettings" : [ "friendlyURLMapping=mahadbt-disbursement-payment-apl", "instanceable=false", "urls=js/main.257e3e69.js", "useESM=true", "htmlElementName=mahadbt-disbursement-payment-apl", "cssURLs=css/main.6df16316.css", "portletCategoryName=category.client-extensions" ],
+    "webContextPath" : "/mahadbt-disbursement-payment-apl"
+  }
+}
