@@ -18,7 +18,8 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
     afsoOffice: userRole === 'AFSO' ? (officeData?.officeName || '') : '',
     afsoCode: userRole === 'AFSO' ? (officeData?.officeId || '') : '',
     dfsoCode: userRole === 'DFSO' ? (officeData?.officeId || '') : '',
-   fpsName: ''
+    fpsName: '',
+    fpsCodes: []
   });
   const [financialYears, setFinancialYears] = useState([]);
   const [months, setMonths] = useState([]);
@@ -29,6 +30,9 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
   const [showTable, setShowTable] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAFSO, setIsAFSO] = useState(userRole === 'AFSO');
+  const [isFPSMultiSelect, setFPSMultiSelect] = useState(false);
+    const [selectedDisbursementsSearch, setSelectedDisbursementsSearch] = useState({});
+  
 
   // State for AFSO tabbed interface
   const [activeTab, setActiveTab] = useState('new');
@@ -45,6 +49,27 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [modalMessage, setModalMessage] = useState({ title: '', message: '' });
+
+  // Replace fpsCode with fpsCodes (array) in your formData initial state
+// const [formData, setFormData] = useState({
+//   // ...other fields
+//   fpsCodes: [], // was: fpsCode: ""
+// });
+
+// Add dropdown open state
+const [fpsDropdownOpen, setFpsDropdownOpen] = useState(false);
+
+// Close dropdown on outside click
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (!e.target.closest(".fps-dropdown-wrapper")) {
+      setFpsDropdownOpen(false);
+    }
+  };
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
+
 
   // Financial year month order (April to March)
   const financialYearMonthOrder = [
@@ -97,7 +122,7 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
       const currentMonthIndex = financialYearMonthOrder.indexOf(currentMonthName);
       return orderedMonths.filter(month => {
         const monthIndex = financialYearMonthOrder.indexOf(month.month_name);
-        return monthIndex <= currentMonthIndex;
+        return monthIndex < currentMonthIndex; // Changed <= to avoid current month
       });
     }
     
@@ -305,7 +330,7 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
         {/* Search Form */}
         <div className="card shadow-sm mb-4">
           <div className="card-body p-4">
-            <h2 className="h5 fw-semibold mb-4">Scheme Search</h2>
+            <h2 className="h5 fw-semibold mb-4">Beneficiary Search</h2>
 
             <div className="row g-3">
               {/* Financial Year */}
@@ -407,6 +432,88 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
                   ))}
                 </select>
               </div>
+
+
+
+              {/* FPS Name - Multi Select */}
+  {isFPSMultiSelect && (<div className="col-12 col-md-6 col-lg-3">
+  <label className="form-label small fw-medium">
+    FPS Name <span className="text-danger">*</span>
+  </label>
+  <div className="position-relative">
+    <div
+      className="form-select d-flex flex-wrap gap-1 align-items-center"
+      style={{ height: "auto", minHeight: "38px", cursor: "pointer" }}
+      onClick={() => setFpsDropdownOpen((prev) => !prev)}
+    >
+      {formData.fpsCodes?.length > 0 ? (
+        formData.fpsCodes.map((code) => {
+          const fps = fpsList.find((f) => f.fps_code === code);
+          return (
+            <span
+              key={code}
+              className="badge bg-primary d-flex align-items-center gap-1"
+              style={{ fontSize: "0.75rem" }}
+            >
+              {fps?.description_en}
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                style={{ fontSize: "0.5rem" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleChange(
+                    "fpsCodes",
+                    formData.fpsCodes.filter((c) => c !== code)
+                  );
+                }}
+              />
+            </span>
+          );
+        })
+      ) : (
+        <span className="text-muted">Select FPS</span>
+      )}
+    </div>
+
+    {fpsDropdownOpen && (
+      <ul
+        className="dropdown-menu show w-100 overflow-auto"
+        style={{ maxHeight: "200px", zIndex: 1050 }}
+      >
+        {fpsList.map((fps) => {
+          const isSelected = formData.fpsCodes?.includes(fps.fps_code);
+          return (
+            <li key={fps.id}>
+              <button
+                type="button"
+                className={`dropdown-item d-flex align-items-center gap-2 ${
+                  isSelected ? "active" : ""
+                }`}
+                onClick={() => {
+                  const updated = isSelected
+                    ? formData.fpsCodes.filter((c) => c !== fps.fps_code)
+                    : [...(formData.fpsCodes || []), fps.fps_code];
+                  handleChange("fpsCodes", updated);
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  readOnly
+                  className="form-check-input m-0"
+                />
+                {fps.description_en}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </div>
+</div>
+)}
+
             </div>
 
             <div className="mt-4">
@@ -444,6 +551,7 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
                   searchParams={formData}
                   onSelectionChange={handleSelectionChange}
                   tabType="new"
+                  setSelectedDisbursementsSearch = {setSelectedDisbursementsSearch}
                 />
               </div>
               
@@ -454,6 +562,7 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
                   searchParams={formData}
                   onSelectionChange={handleSelectionChange}
                   tabType="old"
+                  setSelectedDisbursementsSearch = {setSelectedDisbursementsSearch}
                 />
               </div>
             </div>
