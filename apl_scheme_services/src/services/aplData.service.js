@@ -96,6 +96,8 @@ class APLDataService {
       let countQuery;
       let dataQuery;
 
+      let statusFilter = `AND scrutiny.wf_status in ('APPROVED', 'BILL_GENERATED', 'RFT_GENERATED', 'DISBURSED') `;
+
       if (excludeSubmitted && fy && mm) {
         // Use CTE to exclude families already submitted for this fy and mm
         baseQuery = `
@@ -113,6 +115,7 @@ class APLDataService {
               --AND scrutiny.fy = $${paramIndex}
               --AND scrutiny.mm = $${paramIndex + 1}
               AND scrutiny.member_count = fmc.member_count
+              ${statusFilter}
           )
         `;
         
@@ -136,6 +139,7 @@ class APLDataService {
              -- AND scrutiny.fy = $${paramIndex - 2}
              -- AND scrutiny.mm = $${paramIndex - 1}
               AND scrutiny.member_count = fmc.member_count
+              ${statusFilter}
           )
         `;
 
@@ -178,6 +182,207 @@ class APLDataService {
       throw error;
     }
   }
+
+ async getAllV2(queryParams) {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      isActive,
+      dfsoCode,
+      afsoCode,
+      fpsCode,
+      rcNo,
+      distCode,
+      sortBy = 'rc_no',
+      sortOrder = 'DESC',
+      fy,
+      mm,
+      excludeSubmitted = false
+    } = queryParams;
+
+    const conditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    if (search) {
+      const searchColumns = [
+        'member_name', 'hof_name', 'rc_no::text', 'member_id::text',
+        'uid', 'dist_name', 'fps_name', 'dfso_name', 'afso_name'
+      ];
+      const searchQuery = buildSearchQuery(search, searchColumns);
+      if (searchQuery.condition) {
+        conditions.push(searchQuery.condition);
+        searchQuery.params.forEach(p => params.push(p));
+        paramIndex += searchQuery.params.length;
+      }
+    }
+
+    if (distCode) {
+      conditions.push(`dist_code = $${paramIndex}`);
+      params.push(distCode);
+      paramIndex++;
+    }
+
+    if (dfsoCode) {
+      conditions.push(`dfso_code = $${paramIndex}`);
+      params.push(dfsoCode);
+      paramIndex++;
+    }
+
+    if (afsoCode) {
+      conditions.push(`afso_code = $${paramIndex}`);
+      params.push(afsoCode);
+      paramIndex++;
+    }
+
+    if (fpsCode) {
+      conditions.push(`fps_code = $${paramIndex}`);
+      params.push(fpsCode);
+      paramIndex++;
+    }
+
+    if (rcNo) {
+      conditions.push(`rc_no = $${paramIndex}`);
+      params.push(rcNo);
+      paramIndex++;
+    }
+
+    if (isActive !== undefined) {
+      const activeFilter = buildActiveFilter(isActive);
+      if (activeFilter.condition) {
+        conditions.push(activeFilter.condition.replace('$1', `$${paramIndex}`));
+        params.push(...activeFilter.params);
+        paramIndex++;
+      }
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const approvedStatuses = `('APPROVED', 'BILL_GENERATED', 'RFT_GENERATED', 'DISBURSED')`;
+
+    let countQuery;
+    let dataQuery;
+
+    if (excludeSubmitted) {
+      if (!fy || !mm) {
+        throw new Error('fy and mm are required when excludeSubmitted is true');
+      }
+
+      // Push fy and mm AFTER all WHERE clause params
+      params.push(fy);
+      const fyIndex = paramIndex++;   // e.g. $5
+
+      params.push(mm);
+      const mmIndex = paramIndex++;   // e.g. $6
+
+      const cte = `
+        WITH family_member_counts AS (
+          SELECT
+            *,
+            COUNT(*) OVER (PARTITION BY rc_no) AS member_count
+          FROM ${tables.APL_DATA}
+          ${whereClause}
+        )
+      `;
+
+      // Mirrors the working SQL exactly:
+      // Outer parens wrap (A OR B), then AND NOT EXISTS (C) sits outside
+      const inclusionPredicate = `
+        (
+          (
+            -- (A) Never approved / in-progress for this rc_no + member_count
+            NOT EXISTS (
+              SELECT 1
+              FROM ${tables.APL_WIP} scrutiny
+              WHERE scrutiny.rc_no          = fmc.rc_no
+                AND scrutiny.member_count   = fmc.member_count
+                AND scrutiny.wf_status      IN ${approvedStatuses}
+            )
+
+            OR
+
+            -- (B) REJECTED with no APPROVED/etc for the same fy+mm
+            EXISTS (
+              SELECT 1
+              FROM ${tables.APL_WIP} scrutiny
+              WHERE scrutiny.rc_no          = fmc.rc_no
+                AND scrutiny.member_count   = fmc.member_count
+                AND scrutiny.wf_status      = 'REJECTED'
+                AND NOT EXISTS (
+                  SELECT 1
+                  FROM ${tables.APL_WIP} s2
+                  WHERE s2.rc_no      = scrutiny.rc_no
+                    AND s2.mm         = scrutiny.mm
+                    AND s2.fy         = scrutiny.fy
+                    AND s2.wf_status  IN ${approvedStatuses}
+                )
+            )
+          )
+        )
+
+        -- (C) Exclude if SCRUTINY_PENDING for current fy+mm only
+        --     Previous month pending records are NOT blocked
+        AND NOT EXISTS (
+          SELECT 1
+          FROM ${tables.APL_WIP} scrutiny
+          WHERE scrutiny.rc_no          = fmc.rc_no
+            AND scrutiny.member_count   = fmc.member_count
+            AND scrutiny.wf_status      = 'SCRUTINY_PENDING'
+            AND scrutiny.fy             = $${fyIndex}
+            AND scrutiny.mm             = $${mmIndex}
+        )
+      `;
+
+      countQuery = `
+        ${cte}
+        SELECT COUNT(DISTINCT rc_no) AS count
+        FROM family_member_counts fmc
+        WHERE ${inclusionPredicate}
+      `;
+
+      const orderByClause = buildOrderBy(sortBy, sortOrder);
+      dataQuery = `
+        ${cte}
+        SELECT *
+        FROM family_member_counts fmc
+        WHERE ${inclusionPredicate}
+        ${orderByClause}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+
+    } else {
+      // Standard query — no exclusion logic
+      countQuery = `SELECT COUNT(*) FROM ${tables.APL_DATA} ${whereClause}`;
+
+      const orderByClause = buildOrderBy(sortBy, sortOrder);
+      dataQuery = `
+        SELECT *
+        FROM ${tables.APL_DATA}
+        ${whereClause}
+        ${orderByClause}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+    }
+
+    const countResult = await db.query(countQuery, params);
+    const totalCount = parseInt(countResult.rows[0].count);
+
+    const pagination = buildPagination(page, limit, totalCount);
+
+    const dataParams = [...params, pagination.query.limit, pagination.query.offset];
+    const result = await db.query(dataQuery, dataParams);
+
+    return {
+      data: result.rows,
+      pagination: pagination.metadata
+    };
+
+  } catch (error) {
+    throw error;
+  }
+}
 
   /**
    * Get APL Data by ID

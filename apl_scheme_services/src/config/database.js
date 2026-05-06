@@ -15,7 +15,14 @@ const pool = new Pool({
 
 // Test database connection
 pool.on('connect', () => {
+  
   console.log('Database connected successfully');
+  console.log('Database connected:', {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER
+  });
 });
 
 pool.on('error', (err) => {

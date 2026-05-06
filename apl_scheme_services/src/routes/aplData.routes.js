@@ -29,7 +29,7 @@ async function aplDataRoutes(fastify, options) {
     }
   }, async (request, reply) => {
     try {
-      const result = await aplDataService.getAll(request.query);
+      const result = await aplDataService.getAllV2(request.query);
       return reply.send(successResponse(result.data, 'APL Data records retrieved successfully', result.pagination));
     } catch (error) {
       return reply.status(500).send(databaseErrorResponse(error));

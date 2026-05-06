@@ -489,7 +489,7 @@ class APLWipService {
               rc_no, fps_code, fy, mm,
               split_part(fy, '-', 1)::int AS fy_year
             FROM ${tables.APL_WIP}
-            WHERE wf_status = 'APPROVED'
+            WHERE wf_status in ('APPROVED', 'BILL_GENERATED', 'RFT_GENERATED', 'DISBURSED')
               AND fps_code = $1
               AND NOT EXISTS (
                 SELECT 1
@@ -517,7 +517,7 @@ class APLWipService {
               a.rc_no, a.fps_code, a.fy, a.mm,
               split_part(a.fy, '-', 1)::int AS fy_year
             FROM ${tables.APL_WIP} a
-            WHERE a.wf_status = 'APPROVED'
+            WHERE a.wf_status in ('APPROVED', 'BILL_GENERATED', 'RFT_GENERATED', 'DISBURSED')
               AND a.fps_code = $1
               AND NOT EXISTS (
                 SELECT 1
@@ -525,6 +525,7 @@ class APLWipService {
                 WHERE b.rc_no = a.rc_no
                   AND b.fy = $2
                   AND b.mm = $3
+                  AND b.wf_status != 'REJECTED'
               )
           )
           SELECT * FROM cte WHERE rn = 1
@@ -548,7 +549,7 @@ class APLWipService {
             AND wip.fy = lm.fy
             AND wip.mm = lm.mm
           LEFT JOIN ${tables.APL_DATA} data ON wip.member_id = data.member_id
-          WHERE wip.wf_status = 'APPROVED'
+            WHERE wip.wf_status in ('APPROVED', 'BILL_GENERATED', 'RFT_GENERATED', 'DISBURSED')
             AND wip.fps_code = $1
             ${additionalWhereClause}
           ORDER BY wip.rc_no, wip.member_id, wip.created_at DESC
@@ -586,7 +587,7 @@ class APLWipService {
               ) AS rn,
               a.rc_no, a.fps_code, a.fy, a.mm
             FROM ${tables.APL_WIP} a
-            WHERE a.wf_status = 'APPROVED'
+            WHERE a.wf_status in ('APPROVED', 'BILL_GENERATED', 'RFT_GENERATED', 'DISBURSED')
               AND a.fps_code = $1
               AND NOT EXISTS (
                 SELECT 1
@@ -594,6 +595,7 @@ class APLWipService {
                 WHERE b.rc_no = a.rc_no
                   AND b.fy = $2
                   AND b.mm = $3
+                  AND b.wf_status != 'REJECTED'
               )
           )
           SELECT * FROM cte WHERE rn = 1
@@ -605,7 +607,7 @@ class APLWipService {
             ON wip.rc_no = lm.rc_no
             AND wip.fy = lm.fy
             AND wip.mm = lm.mm
-          WHERE wip.wf_status = 'APPROVED'
+            WHERE wip.wf_status in ('APPROVED', 'BILL_GENERATED', 'RFT_GENERATED', 'DISBURSED')
             AND wip.fps_code = $1
             ${additionalWhereClause}
           ORDER BY wip.rc_no, wip.member_id, wip.created_at DESC
