@@ -12,6 +12,8 @@ const APLAllocationDetailsCard = ({
   searchResults,
   setSearchResults,
   setBackupSearchData,
+  setShowGenerateButton,
+  showGenerateButton,
   backupSearchData = [],
   searchData,
   isPensionRole = false,
@@ -103,7 +105,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
   const [showAllocateButton, setShowAllocateButton] = useState(searchResults?.families?.length > 0);
 
-  const [showGenerateButton, setShowGenerateButton] = useState(false);
+  // const [showGenerateButton, setShowGenerateButton] = useState(false);
   const [showDownloadBeneficiariesButton, setshowDownloadBeneficiariesButton] = useState(searchResults?.families?.length > 0);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -947,18 +949,15 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
           )}
 
           {/* Action buttons */}
-        {showAllocateButton && (
-
+        {!showGenerateButton && (
           <div className="p-3 d-flex justify-content-end gap-2">
             <button className="btn btn-primary px-4" onClick={handleAllocate}>
               Allocate Beneficiaries
             </button>
           </div>
-
         )}
 
         {showGenerateButton && (
-
          <div className="p-3 d-flex justify-content-end gap-2">
             <button
               className="btn btn-primary px-4"

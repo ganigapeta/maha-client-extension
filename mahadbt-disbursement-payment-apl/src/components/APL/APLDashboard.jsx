@@ -46,6 +46,7 @@ function APLDashboard({
   const [backupSearchData, setBackupSearchData] = useState([]);
   const [showLoader, setShowLoader] = useState(false);
   const [months, setMonths] = useState([]);
+  const [showGenerateButton, setShowGenerateButton] = useState(false);
 
   const { register, handleSubmit, setValue, reset, watch, formState: { errors } } = useForm({
     resolver: yupResolver(beneficiaryFilterValidationSchema),
@@ -123,6 +124,7 @@ function APLDashboard({
       setSearchData({ ...data, ...familyObj, ...selectedScheme });
       setBackupSearchData(results.families || []);
       setShowLoader(false);
+      setShowGenerateButton(false);
       setShow(true);
     } catch (error) {
       console.error('Error fetching beneficiary list:', error);
@@ -281,6 +283,8 @@ function APLDashboard({
           searchResults={searchResults}
           setSearchResults={setSearchResults}
           setBackupSearchData={setBackupSearchData}
+          setShowGenerateButton={setShowGenerateButton}
+          showGenerateButton={showGenerateButton}
           backupSearchData={backupSearchData}
           searchData={searchData}
           hideUpperTable={true}
