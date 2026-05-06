@@ -1913,10 +1913,10 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
       const fileName = `RFT_${rowData.billNumber}.pdf`;
       const siteId   = getScopeGroupId();
 
-      if (true) {
-      doc.save(fileName);   // downloads to your machine
-      return;   // stops before uploading to Liferay
-     }
+    //   if (true) {
+    //   doc.save(fileName);   // downloads to your machine
+    //   return;   // stops before uploading to Liferay
+    //  }
       const formData = new FormData();
       formData.append("file",        pdfBlob, fileName);
       formData.append("title",       fileName);
