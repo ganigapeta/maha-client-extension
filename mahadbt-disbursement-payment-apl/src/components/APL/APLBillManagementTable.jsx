@@ -1838,8 +1838,8 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
       const PAGE_W    = 210;
       const PAGE_H    = 297;
       const MARGIN    = 15;       // border inset from page edge
-      const LEFT      = MARGIN + 8;   // text left margin inside border
-      const RIGHT_W   = 170;          // usable text width
+      const LEFT      = MARGIN + 15;   // text left margin inside border
+      const RIGHT_W   = 150;          // usable text width
       const CENTER    = PAGE_W / 2;
 
       // ── BORDER RECTANGLE ──────────────────────────────────────────────────
@@ -1878,8 +1878,8 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
         `${accountNum}, for crediting, the benefits under ${schemeName} in the ` +
         `beneficiary's account.`;
 
-      const splitBody = doc.splitTextToSize(bodyText, RIGHT_W);
-      doc.text(splitBody, LEFT, y);
+      const splitBody = doc.splitTextToSize(bodyText, RIGHT_W,);
+      doc.text(splitBody, LEFT, y, { lineHeightFactor: 1.6 });
       y += splitBody.length * 6 + 6;   // dynamic gap based on wrapped lines
 
       // ── BENEFICIARY COUNT ─────────────────────────────────────────────────
