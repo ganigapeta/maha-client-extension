@@ -1830,7 +1830,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
       const rftNumber = rowData?.billNumber;
 
       // ── Amount formatting helpers ─────────────────────────────────────────
-      const formattedAmount = `${totalAmount.toLocaleString("en-IN")}.000/-`;
+      const formattedAmount = `${totalAmount.toLocaleString("en-IN")}.00/-`;
       const amountInWords   = amountToWordsIndian(totalAmount);   // existing helper
       const countInWords    = numberToWordsIndian(beneficiaryCount); // existing/add helper
 

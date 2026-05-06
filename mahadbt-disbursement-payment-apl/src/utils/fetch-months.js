@@ -69,7 +69,9 @@
       const currentMonthIndex = financialYearMonthOrder.indexOf(currentMonthName);
       return orderedMonths.filter(month => {
         const monthIndex = financialYearMonthOrder.indexOf(month.month_name);
-        return monthIndex <= currentMonthIndex;
+        // return monthIndex <= currentMonthIndex;
+        return monthIndex < currentMonthIndex; // Changed <= to avoid current month
+
       });
     }
     

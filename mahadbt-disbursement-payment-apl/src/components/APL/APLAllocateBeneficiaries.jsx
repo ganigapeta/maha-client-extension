@@ -308,7 +308,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
             "Age": item?.age || "",
             "Aadhaar No.": item?.masked_aadhaar_no || "",
             "Demographic Authentication Completed": item?.demo_auth || "",
-            "EKYC Status": item?.ekyc || "",
+            "eKYC Status": item?.ekyc || "",
             "Aadhaar Linked Bank Account Available?":
               item?.is_aadhaar_linked_account ? "Yes" : "No",
             "Total Family Member": item?.member_count || "",
@@ -360,7 +360,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
       { text: "Age", style: "th", alignment: "center" },
       { text: "Aadhaar No.", style: "th", alignment: "center" },
       { text: "Demographic Authentication Completed", style: "th", alignment: "center" },
-      { text: "EKYC Status", style: "th", alignment: "center" },
+      { text: "eKYC Status", style: "th", alignment: "center" },
       { text: "Aadhaar Linked Bank Account Available?", style: "th", alignment: "center" },
       { text: "Total Family Member", style: "th", alignment: "center" },
       { text: "Financial Year", style: "th", alignment: "center" },

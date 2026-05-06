@@ -187,6 +187,10 @@ function APLDashboard({
                 <select
                   className={`form-select ${errors.distCode ? 'is-invalid' : ''}`}
                   {...register('distCode')}
+                  onChange={(e) => {
+                 const district = masterData?.districts?.find(s => s.districtcode == e.target.value);
+                  setValue('dist_name', district?.name);  // ← hidden field stores full object
+                }}
                 >
                   <option value="">Select</option>
                   {masterData.districts?.map((district) => (
