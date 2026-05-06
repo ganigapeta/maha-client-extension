@@ -14,7 +14,8 @@ const BeneficiaryTable = ({
   beneficiaries, 
   searchParams, 
   onSelectionChange,
-  tabType = 'new'
+  tabType = 'new',
+  setSelectedDisbursementsSearch
 }) => {
   const [selectedFamilies, setSelectedFamilies] = useState(new Set());
   const [selectedDisbursements, setSelectedDisbursements] = useState({});
@@ -288,7 +289,7 @@ const BeneficiaryTable = ({
             fps_code: family.fps_code,
             fps_name: family.fps_name || "string",
             amount: totalBenefitAmount,
-            member_count: isOldScrutiny ? family?.members?.[0].member_count : family.members.length,
+            member_count: family.members.length,
             is_aadhaar_linked_account: member.is_aadhaar_linked_account || false,
             is_disbursement_account: isDisbursementMember, // true only for selected member
             wf_status: "SCRUTINY_PENDING"
@@ -408,7 +409,7 @@ const BeneficiaryTable = ({
               <th className="px-4 py-3 text-left font-semibold text-white">Age</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Aadhaar No.</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Demographic Authentication Completed</th>
-              <th className="px-4 py-3 text-left font-semibold text-white">EKYC Status</th>
+              <th className="px-4 py-3 text-left font-semibold text-white">eKYC Status</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Aadhaar Linked Bank account available?</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Select Account for Disbursement</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Total Benefit Amount</th>

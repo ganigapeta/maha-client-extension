@@ -338,7 +338,7 @@ const BeneficiaryTableDFSO = ({ beneficiaries, searchParams, userRole }) => {
               <th className="px-4 py-3 text-left font-semibold text-white">Age</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Aadhaar No.</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Demographic Authentication Completed</th>
-              <th className="px-4 py-3 text-left font-semibold text-white">EKYC Status</th>
+              <th className="px-4 py-3 text-left font-semibold text-white">eKYC Status</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Aadhaar Linked Bank account available?</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Selected Account for Disbursement?</th>
               <th className="px-4 py-3 text-left font-semibold text-white">Total Benefit Amount</th>
@@ -549,7 +549,7 @@ const BeneficiaryTableDFSO = ({ beneficiaries, searchParams, userRole }) => {
         onSubmit={handleRemarksSubmit}
         onCancel={handleRemarksCancel}
         submitButtonText="Reject"
-        cancelButtonText="Cancel"
+        cancelButtonText="Close"
       />
     </div>
   );

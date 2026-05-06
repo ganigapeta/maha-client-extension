@@ -1776,6 +1776,11 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
           const m = parseInt(searchData.month, 10);
           return `${monthNames[m - 1]} ${searchData.year}`;
         }
+
+        if (searchData?.installment && searchData?.financialYear && financialYear) {
+          return `${searchData?.installment} ${financialYear}`;
+        }
+        
         // Fallback: derive from bill date
         const billDate = new Date(rowData?.dateCreated || new Date());
         return `${monthNames[billDate.getMonth()]} ${billDate.getFullYear()}`;
