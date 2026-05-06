@@ -185,7 +185,7 @@ useEffect(() => {
   };
 
   const isFormValid = () => {
-    const baseValid = formData.financialYear && formData.month;// && formData.fpsName;
+    const baseValid = formData.financialYear && formData.month && formData.fpsName;
     // For DFSO role, AFSO office is also mandatory
     if (userRole === 'DFSO') {
       return baseValid && formData.afsoCode && formData.fpsCode;
