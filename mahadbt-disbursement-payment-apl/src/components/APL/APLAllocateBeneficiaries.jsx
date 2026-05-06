@@ -12,6 +12,8 @@ const APLAllocationDetailsCard = ({
   searchResults,
   setSearchResults,
   setBackupSearchData,
+  setShowGenerateButton,
+  showGenerateButton,
   backupSearchData = [],
   searchData,
   isPensionRole = false,
@@ -101,9 +103,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
   const [billGeneratedBillInfo, setBillGeneratedBillInfo] = useState({});
 
-  const [showAllocateButton, setShowAllocateButton] = useState(searchResults?.families?.length > 0);
-
-  const [showGenerateButton, setShowGenerateButton] = useState(false);
+  // const [showGenerateButton, setShowGenerateButton] = useState(false);
   const [showDownloadBeneficiariesButton, setshowDownloadBeneficiariesButton] = useState(searchResults?.families?.length > 0);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -112,12 +112,13 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
   // Add useEffect to monitor state changes
   useEffect(() => {
-    console.log("searchResults updated:", searchResults);
-    console.log("selectedBeneficiaries updated:", selectedBeneficiaries);
-    console.log("allocateInputData updated:", allocateInputData);
-    if(searchResults?.families?.length > 0) {
-      if(!showGenerateButton)setShowAllocateButton(true);
+    if (searchResults?.families?.length > 0) {
       setshowDownloadBeneficiariesButton(true);
+    } else {
+      setValidationMessage({
+        text: ``,
+        type: 'success'
+      });
     }
   }, [searchResults, selectedBeneficiaries, allocateInputData]);
 
@@ -199,7 +200,6 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
     // Set allocation success to true to keep office payment number visible
     setAllocationSuccess(true);
-    setShowAllocateButton(false)
     setShowGenerateButton(true)
   };
 
@@ -906,7 +906,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
             {/* Right side: Download buttons */}
             
-            {showDownloadBeneficiariesButton && (
+            {allocationData?.totalFamilies > 0 && (
 
             <div
               className="d-flex flex-column gap-2"
@@ -947,18 +947,15 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
           )}
 
           {/* Action buttons */}
-        {showAllocateButton && (
-
+        {!showGenerateButton && allocationData?.totalFamilies > 0 && (
           <div className="p-3 d-flex justify-content-end gap-2">
             <button className="btn btn-primary px-4" onClick={handleAllocate}>
               Allocate Beneficiaries
             </button>
           </div>
-
         )}
 
         {showGenerateButton && (
-
          <div className="p-3 d-flex justify-content-end gap-2">
             <button
               className="btn btn-primary px-4"
