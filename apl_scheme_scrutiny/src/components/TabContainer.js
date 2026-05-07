@@ -9,7 +9,7 @@ import React from 'react';
 const TabContainer = ({ tabs, activeTab, onTabChange }) => {
   return (
     <div className="mb-4">
-      <nav className="nav-custom-tabs d-flex gap-4" aria-label="Tabs">
+      <nav className="nav-custom-tabs acessibility-bg d-flex gap-2 pl-2" aria-label="Tabs">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
