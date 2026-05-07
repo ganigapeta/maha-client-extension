@@ -112,16 +112,15 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
   // Add useEffect to monitor state changes
   useEffect(() => {
-    setShowGenerateModal(prev => ({ confirm: false, show: false }));
-    if (searchResults?.families?.length > 0) {
-      setshowDownloadBeneficiariesButton(true);
-    } else {
-      setValidationMessage({
+    setShowGenerateModal({ confirm: false, show: false });
+    setValidationMessage({
         text: ``,
         type: 'success'
       });
+    if (searchResults?.families?.length > 0) {
+      setshowDownloadBeneficiariesButton(true);
     }
-  }, [searchResults, selectedBeneficiaries, allocateInputData]);
+  }, [searchResults]);
 
   const formatAmountIndian = (value) => {
     const amount = Number(value);
