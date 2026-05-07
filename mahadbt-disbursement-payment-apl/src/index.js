@@ -21,7 +21,7 @@ class WebComponent extends HTMLElement {
   }
 }
 
-const ELEMENT_NAME = "mahadbt-disbursement-payment-apl";
+const ELEMENT_NAME = "mahadbt-disbursement-payment-apl-scheme";
 
 if (customElements.get(ELEMENT_NAME)) {
   console.log(`Skipping registration for <${ELEMENT_NAME}> (already registered)`);

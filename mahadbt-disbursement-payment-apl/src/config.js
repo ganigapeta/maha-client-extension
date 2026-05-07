@@ -1,5 +1,5 @@
-const USE_HARDCODED_AUTH = true; // 👈 flip this one flag
-const USE_HARDCODED_USER = true; // 👈 flip this one flag
+const USE_HARDCODED_AUTH = false; // 👈 flip this one flag
+const USE_HARDCODED_USER = false; // 👈 flip this one flag
 
 export const AUTH_TOKEN = USE_HARDCODED_AUTH
   ? "Basic " + btoa("prabhudasu:root")

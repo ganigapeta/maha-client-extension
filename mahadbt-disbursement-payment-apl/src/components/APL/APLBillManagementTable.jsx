@@ -1890,7 +1890,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
       // ── BENEFICIARY COUNT ─────────────────────────────────────────────────
       const countText =
         `Total number of beneficiaries included in this request is ${beneficiaryCount} ` +
-        `(${countInWords} Only. )`;
+        `(${countInWords} Only).`;
 
       const splitCount = doc.splitTextToSize(countText, RIGHT_W);
       doc.text(splitCount, LEFT, y);
@@ -1899,7 +1899,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
       // ── TOTAL AMOUNT ──────────────────────────────────────────────────────
       const totalText =
         `Total amount due to the beneficiaries is Rs.${formattedAmount}` +
-        `(${amountInWords} Only).`;
+        `(${amountInWords}).`;
 
       const splitTotal = doc.splitTextToSize(totalText, RIGHT_W);
       doc.text(splitTotal, LEFT, y);

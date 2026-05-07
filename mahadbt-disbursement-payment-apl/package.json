@@ -1,8 +1,7 @@
 {
-  "name": "@liferay/mahadbt-disbursement-payment-apl",
+  "name": "@liferay/mahadbt-disbursement-payment-apl-scheme",
   "version": "0.1.0",
   "private": true,
-  "proxy": "https://mahadbt2-qa-dashboard.quantela.com",
   "dependencies": {
     "@babel/core": "^7.28.4",
     "@babel/preset-env": "^7.28.3",
