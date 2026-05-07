@@ -443,7 +443,7 @@ const BeneficiaryTable = ({
                   : isSelected 
                   ? 'bg-blue-50' 
                   : !hasAadhaarLinked
-                  ? 'bg-gray-100'
+                  ? 'bg-gray-50'
                   : 'bg-white hover:bg-gray-50';
 
                 return (

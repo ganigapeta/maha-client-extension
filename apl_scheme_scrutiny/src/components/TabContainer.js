@@ -8,24 +8,25 @@ import React from 'react';
  */
 const TabContainer = ({ tabs, activeTab, onTabChange }) => {
   return (
-    <div className="border-bottom mb-4">
-      <nav className="d-flex gap-4" aria-label="Tabs">
+    <div className="mb-4">
+      <nav className="nav-custom-tabs d-flex gap-4" aria-label="Tabs">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`btn btn-link text-decoration-none text-nowrap py-3 px-2 border-bottom border-2 fw-medium small ${
-                isActive
-                  ? 'border-primary text-primary'
-                  : 'border-0 text-secondary'
-              }`}
+              className="btn btn-link text-decoration-none text-nowrap py-3 px-2"
               aria-current={isActive ? 'page' : undefined}
               style={{ borderRadius: 0 }}
             >
-              {tab.label}
-              {tab.count !== undefined && (
+              <span className={`nav-item-text py-2 ${
+                isActive
+                  ? 'border-bottom border-2 border-0'
+                  : 'border-0'
+              }`}>
+                {tab.label}
+                {tab.count !== undefined && (
                 <span className={`ms-2 badge rounded-pill ${
                   isActive
                     ? 'bg-primary bg-opacity-10 text-primary'
@@ -33,7 +34,8 @@ const TabContainer = ({ tabs, activeTab, onTabChange }) => {
                 }`}>
                   {tab.count}
                 </span>
-              )}
+                )}
+              </span>
             </button>
           );
         })}
