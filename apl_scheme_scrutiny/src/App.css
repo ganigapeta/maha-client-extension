@@ -116,3 +116,11 @@ span.ms-2.badge.rounded-pill{
 .theme-grey .nav-link.active .badge{
     color:var(--grey-color) !important;
 }
+
+.nav-custom-tabs .nav-item-text {
+    color: #fff !important;
+}
+
+.nav-custom-tabs .nav-item-text .badge {
+    color: #000 !important;
+}

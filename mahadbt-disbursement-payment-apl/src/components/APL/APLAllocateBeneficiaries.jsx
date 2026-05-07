@@ -112,6 +112,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
 
   // Add useEffect to monitor state changes
   useEffect(() => {
+    setShowGenerateModal(prev => ({ confirm: false, show: false }));
     if (searchResults?.families?.length > 0) {
       setshowDownloadBeneficiariesButton(true);
     } else {
