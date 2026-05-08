@@ -184,7 +184,7 @@ useEffect(() => {
   };
 
   const isFormValid = () => {
-    const baseValid = formData.financialYear && formData.month && formData.fpsName;
+    const baseValid = formData.financialYear && formData.month ;//&& formData.fpsName;
     // For DFSO role, AFSO office is also mandatory
     if (userRole === 'DFSO') {
       return baseValid && formData.afsoCode && formData.fpsCode;
@@ -414,7 +414,7 @@ useEffect(() => {
                     <option value="">Select AFSO Office</option>
                     {afsoList.map((afso) => (
                       <option key={afso.id} value={afso.afso_code}>
-                        {afso.description_en} || {afso.afso_code}
+                        {afso.description_en} | {afso.afso_code}
                       </option>
                     ))}
                   </select>
@@ -441,7 +441,7 @@ useEffect(() => {
                   <option value="">Select FPS</option>
                   {fpsList.map((fps) => (
                     <option key={fps.id} value={fps.fps_code}>
-                      {fps.description_en} || {fps.fps_code}
+                      {fps.description_en} | {fps.fps_code}
                     </option>
                   ))}
                 </select>
