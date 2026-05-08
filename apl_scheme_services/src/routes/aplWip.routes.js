@@ -419,6 +419,85 @@ async function aplWipRoutes(fastify, options) {
       return reply.status(500).send(databaseErrorResponse(error));
     }
   });
+
+  // Bulk update WIP status (for DFSO approve/reject)
+  fastify.post('/bill-update', {
+    schema: {
+      description: 'Bulk update WIP record status (APPROVE or REJECT)',
+      tags: ['APL WIP'],
+      body: {
+        type: 'object',
+        required: ['bill_no', 'status'],
+        properties: {
+          bill_no: { 
+            type: 'string', 
+            items: { type: 'string' },
+            description: 'Bill Number'
+          },
+          status: { 
+            type: 'string', 
+            enum: ['APPROVED', 'REJECTED', 'ALLOTED', 'BILL_GENERATED', 'DISBURSED', 'RFT_GENERATED',"SIGNED_BY_DDO", "XML_GENERATED"],
+            description: 'New status for the records'
+          },
+          fy: { type: 'string', description: 'Financial Year (e.g., 2023-2024) - informational only' },
+          mm: { type: 'integer', minimum: 1, maximum: 12, description: 'Month number (1-12) - informational only' },
+          
+        }
+      }
+    }
+  }, async (request, reply) => {
+    try {
+      const { bill_no, status, remarks, fy, mm } = request.body;
+
+      
+      const userId = request.headers['x-user-id'] || request?.body?.userId || 1;
+      const result = await aplWipService.updateBillStatus(bill_no, status, remarks, userId, fy, mm, request.body);
+      
+      if(result.success){
+        return reply.send(successResponse(
+          result.data,
+          `Successfully updated ${result.count} record(s) to ${status}`,
+          { count: result.count }
+        ));
+      } else {
+        return reply.status(400).send(validationErrorResponse(result.message));
+      }
+    } catch (error) {
+      return reply.status(500).send(databaseErrorResponse(error));
+    }
+  });
+
+
+  fastify.get('/fetch/beneficiaries', {
+    schema: {
+      description: 'Get all WIP records with pagination, search, and filters',
+      tags: ['APL WIP'],
+      querystring: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', minimum: 1, default: 1 },
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+          search: { type: 'string' },
+          isActive: { type: 'boolean' },
+          status: { type: 'string', enum: ['SCRUTINY_PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'] },
+          dfsoCode: { type: 'integer' },
+          afsoCode: { type: 'integer' },
+          fpsCode: { type: 'integer' },
+          fy: { type: 'string', description: 'Financial Year (e.g., 2023-2024)' },
+          mm: { type: 'integer', minimum: 1, maximum: 12, description: 'Month number (1-12)' },
+          sortBy: { type: 'string', default: 'created_at' },
+          sortOrder: { type: 'string', enum: ['ASC', 'DESC'], default: 'DESC' }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    try {
+      const result = await aplWipService.getAllBeneficiaries(request.query);
+      return reply.send(successResponse(result.data, 'WIP records retrieved successfully', result.pagination));
+    } catch (error) {
+      return reply.status(500).send(databaseErrorResponse(error));
+    }
+  });
 }
 
 module.exports = aplWipRoutes;

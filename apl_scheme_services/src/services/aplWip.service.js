@@ -1041,5 +1041,214 @@ async updateRftStatus(rcNumbers, status, remarks = null, userId = 1, fy = null, 
       client.release();
     }
   }
+
+
+async updateBillStatus(bill_no, status, remarks = null, userId = 1, fy = null, mm = null, requestBody = {}) {
+    const client = await db.pool.connect();
+
+ 
+
+    // ── Dynamic column builder ──────────────────────────────────────────
+    const buildUpdate = (table, updates, extraWhere, extraParams = []) => {
+      const fields = [];
+      const params = [];
+      let i = 1;
+
+      for (const [col, val] of Object.entries(updates)) {
+        if (val !== undefined) {
+          fields.push(`${col} = $${i++}`);
+          params.push(val);
+        }
+      }
+
+      // extra params (e.g. fy, mm if needed)
+      extraParams.forEach(p => params.push(p));
+
+      const query = `
+        UPDATE ${table}
+        SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP
+        WHERE ${extraWhere}
+        RETURNING *
+      `;
+
+      return { query, params };
+    };
+
+    try {
+      await client.query('BEGIN');
+
+      // ── Table 1: APL_RFT (or your second table) ────────────────────────
+      const rftUpdates = {
+        rft_status:  requestBody.status,
+        bill_generated_by:  requestBody.userId,
+        updated_by:        requestBody.userId,
+      };
+
+      const { query: rftQuery, params: rftParams } = buildUpdate(
+        tables.APL_ALLOTMENT_DETAIL,         // 👈 replace with your second table
+        rftUpdates,
+        `bill_no = '${requestBody.bill_no}'`         // 👈 replace with your second table's where clause
+      );
+
+      const rftResult = await client.query(rftQuery, rftParams);
+
+      if (rftResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return { success: false, message: 'No matching records found in APL_RFT' };
+      }
+
+      await client.query('COMMIT');
+
+      return {
+        success: true,
+        count: rftResult.rowCount,
+        data: rftResult.rows
+      };
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+
+  async getAllBeneficiaries(queryParams) {
+    try {
+      const { 
+        page = 1, limit = 10, search = '', isActive, wf_status, fy, mm, is_disbursement_account,
+        dfsoCode, afsoCode, fpsCode, distCode, sortBy = 'created_at', sortOrder = 'DESC' 
+      } = queryParams;
+
+      // Build WHERE conditions
+      const conditions = [];
+      const params = [];
+      let paramIndex = 1;
+
+      // Add search condition
+      if (search) {
+        const searchColumns = [
+          'member_name', 'hof_name', 'rc_no::text', 'member_id::text', 
+          'uid', 'dist_name', 'fps_name'
+        ];
+        const searchQuery = buildSearchQuery(search, searchColumns);
+        if (searchQuery.condition) {
+          conditions.push(searchQuery.condition);
+          searchQuery.params.forEach(p => params.push(p));
+          paramIndex += searchQuery.params.length;
+        }
+      }
+
+      // Add status filter
+      if (wf_status) {
+        conditions.push(`wf_status = $${paramIndex}`);
+        params.push(wf_status);
+        paramIndex++;
+      }
+
+      // Add DFSO filter
+      if (dfsoCode) {
+        conditions.push(`dfso_code = $${paramIndex}`);
+        params.push(dfsoCode);
+        paramIndex++;
+      }
+
+      // Add AFSO filter
+      if (afsoCode) {
+        conditions.push(`afso_code = $${paramIndex}`);
+        params.push(afsoCode);
+        paramIndex++;
+      }
+
+      // Add FPS filter
+      if (fpsCode) {
+        conditions.push(`fps_code = $${paramIndex}`);
+        params.push(fpsCode);
+        paramIndex++;
+      }
+
+      // Add District filter
+      if (distCode) {
+        conditions.push(`dist_code = $${paramIndex}`);
+        params.push(distCode);
+        paramIndex++;
+      }
+
+      // Add Finanacial Year filter
+      if (fy) {
+        conditions.push(`fy = $${paramIndex}`);
+        params.push(fy);
+        paramIndex++;
+      }
+
+      // Add Month filter
+      if (mm) {
+        conditions.push(`mm = $${paramIndex}`);
+        params.push(mm);
+        paramIndex++;
+      }
+
+      if(is_disbursement_account !== undefined){
+        conditions.push(`is_disbursement_account = $${paramIndex}`);
+        params.push(is_disbursement_account);
+        paramIndex++;
+      }
+
+
+      // Add active filter
+      if (isActive !== undefined) {
+        const activeFilter = buildActiveFilter(isActive);
+        if (activeFilter.condition) {
+          conditions.push(activeFilter.condition.replace('$1', `$${paramIndex}`));
+          params.push(...activeFilter.params);
+          paramIndex++;
+        }
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+      // Get total count
+      const countQuery = `SELECT COUNT(*) FROM ${tables.APL_WIP} ${whereClause}`;
+      const countResult = await db.query(countQuery, params);
+      const totalCount = parseInt(countResult.rows[0].count);
+
+      // Build pagination
+      const pagination = buildPagination(page, limit, totalCount);
+
+      // Get data with JOIN to t_apl_data for additional member information
+      const orderByClause = buildOrderBy(sortBy, sortOrder);
+      const dataQuery = `
+        SELECT 
+          wip.*,
+          data.dist_name,
+          data.dfso_name,
+          data.afso_name,
+          data.member_name,
+          data.gender,
+          data.relation_name,
+          data.member_dob,
+          data.uid,
+          data.demo_auth,
+          data.ekyc,
+          data.masked_aadhaar_no
+        FROM ${tables.APL_ALLOTMENT_DETAIL} wip
+        LEFT JOIN ${tables.APL_DATA} data ON wip.member_id = data.member_id
+        ${whereClause.replace('wf_status', 'wip.wf_status').replace('dfso_code', 'wip.dfso_code').replace('afso_code', 'wip.afso_code').replace('fps_code', 'wip.fps_code').replace('dist_code', 'wip.dist_code').replace('is_active', 'wip.is_active')}
+        ${orderByClause}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+      
+      const dataParams = [...params, pagination.query.limit, pagination.query.offset];
+      const result = await db.query(dataQuery, dataParams);
+
+      return {
+        data: result.rows,
+        pagination: pagination.metadata
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 module.exports = new APLWipService();

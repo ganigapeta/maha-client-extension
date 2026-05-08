@@ -887,6 +887,165 @@ class APLBillService {
       client.release();
     }
   }
+
+
+ async getBilldetails(queryParams) {
+  try {
+    const { 
+      page = 1, limit = 10, isActive, fy, mm, is_disbursement_account,
+      dfsoCode, afsoCode, fpsCode, distCode, billNo,
+      sortBy = 'bill_date', sortOrder = 'DESC' 
+    } = queryParams;
+
+    // Allowed sort columns (must all be in GROUP BY or aggregates)
+    const allowedSortColumns = {
+      'bill_date'      : 'taad.bill_date',
+      'bill_no'        : 'taad.bill_no',
+      'rft_no'         : 'taad.rft_no',
+      'fy'             : 'taad.fy',
+      'mm'             : 'taad.mm',
+      'dist_name'      : 'tad.dist_name',
+      'dist_code'      : 'tad.dist_code',
+      'total_amount'   : 'total_amount',
+      'total_families' : 'total_families',
+      'total_members'  : 'total_members',
+    };
+
+    const sortColumn    = allowedSortColumns[sortBy] || 'taad.bill_date';
+    const sortDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    // Build WHERE conditions
+    const conditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    // Fixed condition
+    conditions.push(`taad.rft_status = 'SIGNED_BY_DDO'`);
+
+    // Add DFSO filter
+    if (dfsoCode) {
+      conditions.push(`tad.dfso_code = $${paramIndex}`);
+      params.push(dfsoCode);
+      paramIndex++;
+    }
+
+    // Add AFSO filter
+    if (afsoCode) {
+      conditions.push(`tad.afso_code = $${paramIndex}`);
+      params.push(afsoCode);
+      paramIndex++;
+    }
+
+    // Add FPS filter
+    if (fpsCode) {
+      conditions.push(`tad.fps_code = $${paramIndex}`);
+      params.push(fpsCode);
+      paramIndex++;
+    }
+
+    // Add District filter
+    if (distCode) {
+      conditions.push(`tad.dist_code = $${paramIndex}`);
+      params.push(distCode);
+      paramIndex++;
+    }
+
+    // Add Financial Year filter
+    if (fy) {
+      conditions.push(`taad.fy = $${paramIndex}`);
+      params.push(fy);
+      paramIndex++;
+    }
+
+    // Add Month filter
+    if (mm) {
+      conditions.push(`taad.mm = $${paramIndex}`);
+      params.push(mm);
+      paramIndex++;
+    }
+
+    // Add Bill No array filter
+    if (billNo && billNo.length > 0) {
+      conditions.push(`taad.bill_no = ANY($${paramIndex}::text[])`);
+      params.push(billNo);
+      paramIndex++;
+    }
+
+    // Add disbursement account filter
+    if (is_disbursement_account !== undefined) {
+      conditions.push(`taad.is_disbursement_account = $${paramIndex}`);
+      params.push(is_disbursement_account);
+      paramIndex++;
+    }
+
+    // Add active filter
+    if (isActive !== undefined) {
+      const activeFilter = buildActiveFilter(isActive);
+      if (activeFilter.condition) {
+        conditions.push(activeFilter.condition.replace('$1', `$${paramIndex}`));
+        params.push(...activeFilter.params);
+        paramIndex++;
+      }
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const joinClause = `
+      FROM ${tables.APL_ALLOTMENT_DETAIL} taad
+      INNER JOIN ${tables.APL_DATA} tad ON tad.member_id = taad.member_id
+    `;
+
+    const groupByClause = `
+      GROUP BY taad.bill_no, taad.bill_date, taad.rft_no, taad.fy, taad.mm, tad.dist_name, tad.dist_code
+    `;
+
+    // Get total count (count distinct bill groups)
+    const countQuery = `
+      SELECT COUNT(*) FROM (
+        SELECT taad.bill_no
+        ${joinClause}
+        ${whereClause}
+        ${groupByClause}
+      ) AS bill_groups
+    `;
+    const countResult = await db.query(countQuery, params);
+    const totalCount = parseInt(countResult.rows[0].count);
+
+    // Build pagination
+    const pagination = buildPagination(page, limit, totalCount);
+
+    // Get aggregated bill data
+    const dataQuery = `
+      SELECT
+        taad.bill_no,
+        taad.bill_date,
+        taad.rft_no,
+        taad.fy,
+        taad.mm,
+        tad.dist_name,
+        tad.dist_code,
+        COUNT(*) AS total_families,
+        SUM(taad.member_count) AS total_members,
+        SUM(taad.amount) AS total_amount
+      ${joinClause}
+      ${whereClause}
+      ${groupByClause}
+      ORDER BY ${sortColumn} ${sortDirection}
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    const dataParams = [...params, pagination.query.limit, pagination.query.offset];
+    const result = await db.query(dataQuery, dataParams);
+
+    return {
+      data: result.rows,
+      pagination: pagination.metadata
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+    
 }
 
 module.exports = new APLBillService();

@@ -346,6 +346,46 @@ async function aplBillRoutes(fastify, options) {
       return reply.status(500).send(databaseErrorResponse(error));
     }
   });
+
+  // Get all BILL records
+  fastify.get('/bill-details', {
+    schema: {
+      description: 'Get all BILL records with pagination, search, and filters',
+      tags: ['APL Bill'],
+      querystring: {
+        type: 'object',
+        properties: {
+          bill_nos: { 
+            type: 'array', 
+            items: { type: 'string' },
+            description: 'Array of bill numbers to update'
+          },
+          page: { type: 'integer', minimum: 1, default: 1 },
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+          search: { type: 'string' },
+          isActive: { type: 'boolean' },
+          status: { type: 'string', enum: ['SCRUTINY_PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'SIGNED_BY_DDO', 'DISBURSED'] },
+          distCode: { type: 'integer' },
+          dfsoCode: { type: 'integer' },
+          afsoCode: { type: 'integer' },
+          fpsCode: { type: 'integer' },
+          fy: { type: 'string', description: 'Financial Year (e.g., 2023-2024)' },
+          mm: { type: 'integer', minimum: 1, maximum: 12, description: 'Month number (1-12)' },
+          sortBy: { type: 'string', default: 'created_at' },
+          sortOrder: { type: 'string', enum: ['ASC', 'DESC'], default: 'DESC' }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    try {
+      const result = await aplBillService.getBilldetails(request.query);
+      return reply.send(successResponse(result.data, 'BILL records retrieved successfully', result.pagination));
+    } catch (error) {
+      return reply.status(500).send(databaseErrorResponse(error));
+    }
+  });
+
+  
 }
 
 module.exports = aplBillRoutes;

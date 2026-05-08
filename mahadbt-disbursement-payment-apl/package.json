@@ -1,5 +1,5 @@
 {
-  "name": "@liferay/mahadbt-disbursement-payment-apl-scheme",
+  "name": "@liferay/mahadbt-disbursement-payment-apl-schemes",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
