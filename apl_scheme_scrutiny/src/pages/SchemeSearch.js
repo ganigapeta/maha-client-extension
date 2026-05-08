@@ -441,7 +441,7 @@ useEffect(() => {
                   <option value="">Select FPS</option>
                   {fpsList.map((fps) => (
                     <option key={fps.id} value={fps.fps_code}>
-                      {fps.description_en}
+                      {fps.description_en} || {fps.fps_code}
                     </option>
                   ))}
                 </select>
