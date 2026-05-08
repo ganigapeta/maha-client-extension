@@ -57,13 +57,13 @@ const APLAllocationDetailsCard = ({
     if (allocatedAmount > totalBalance) {
       return {
         isValid: false,
-        message: `Allocated amount (₹${allocatedAmount}) exceeds total balance (₹${totalBalance})`,
+        message: `Allocated amount (₹ ${allocatedAmount}) exceeds total balance (₹ ${totalBalance})`,
         amount: allocatedAmount
       };
     }
     return {
       isValid: true,
-      message: `Valid: ₹${allocatedAmount} to be allocated`,
+      message: `Valid: ₹ ${allocatedAmount} to be allocated`,
       amount: allocatedAmount
     };
   };
@@ -187,7 +187,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
     const payload = await apiService.allocateAPLBeneficiaries(searchResults?.families, searchData);
    
     setValidationMessage({
-      text: `Successfully allocated ${searchResults?.total_families} beneficiaries with amount ₹${searchResults?.total_amount}`,
+      text: `Successfully allocated ${searchResults?.total_families} beneficiaries with amount ₹ ${searchResults?.total_amount}`,
       type: 'success'
     });
 
@@ -238,7 +238,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
             isValid = false;
           } else {
             setValidationMessage({
-              text: `Valid: ${numValue} beneficiaries selected, amount: ₹${balanceCheck.amount}`,
+              text: `Valid: ${numValue} beneficiaries selected, amount: ₹ ${balanceCheck.amount}`,
               type: 'success'
             });
             isValid = true;
@@ -419,7 +419,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
                       Current Month Expenditure (₹)
                     </td>
                     <td style={{ padding: "10px", backgroundColor: "white" }}>
-                      ₹{allocationData.currentMonthExpenditure}
+                      ₹ {allocationData.currentMonthExpenditure}
                     </td>
                     <td
                       className="fw-bold"
@@ -428,7 +428,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
                       Current Month Balance (₹)
                     </td>
                     <td style={{ padding: "10px", backgroundColor: "white" }}>
-                      ₹{allocationData.currentMonthBalance}
+                      ₹ {allocationData.currentMonthBalance}
                     </td>
                   </tr>
 
@@ -441,7 +441,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
                       Total Budget (₹)
                     </td>
                     <td style={{ padding: "10px", backgroundColor: "white" }}>
-                      ₹{allocationData.totalBudget}
+                      ₹ {allocationData.totalBudget}
                     </td>
                     <td
                       className="fw-bold"
@@ -450,7 +450,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
                       Total Expenditure (₹)
                     </td>
                     <td style={{ padding: "10px", backgroundColor: "white" }}>
-                      ₹{allocationData.totalExpenditure}
+                      ₹ {allocationData.totalExpenditure}
                     </td>
                     <td
                       className="fw-bold"
@@ -459,7 +459,7 @@ console.log("searchData in APLAllocationDetailsCard::::", searchData, backupSear
                       Total Balance (₹)
                     </td>
                     <td style={{ padding: "10px", backgroundColor: "white" }}>
-                      ₹{allocationData.totalBalance}
+                      ₹ {allocationData.totalBalance}
                     </td>
                   </tr>
 

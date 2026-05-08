@@ -65,13 +65,13 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
     if (allocatedAmount > totalBalance) {
       return {
         isValid: false,
-        message: `Allocated amount (₹${allocatedAmount}) exceeds total balance (₹${totalBalance})`,
+        message: `Allocated amount (₹${allocatedAmount}) exceeds total balance (₹ ${totalBalance})`,
         amount: allocatedAmount
       };
     }
     return {
       isValid: true,
-      message: `Valid: ₹${allocatedAmount} to be allocated`,
+      message: `Valid: ₹ ${allocatedAmount} to be allocated`,
       amount: allocatedAmount
     };
   };
@@ -194,7 +194,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
     const payload = await apiService.allocateAPLBeneficiaries(searchResults?.families, searchData, setBillGeneratedBillInfo);
     setSelectedBeneficiaries(payload?.data || []);
     setValidationMessage({
-      text: `Successfully allocated ${searchResults?.total_families} beneficiaries with amount ₹${searchResults?.total_amount}`,
+      text: `Successfully allocated ${searchResults?.total_families} beneficiaries with amount ₹ ${searchResults?.total_amount}`,
       type: 'success'
     });
 
@@ -872,7 +872,7 @@ const isPensionInstallment = searchData?.installment === "Monthly Benefit" ||
                       Total Amount (₹)
                     </td>
                     <td style={{ padding: "10px", backgroundColor: "white" }}>
-                      ₹{allocationData.totalAmount}
+                      ₹ {allocationData.totalAmount}
                     </td>
                   </tr>
 

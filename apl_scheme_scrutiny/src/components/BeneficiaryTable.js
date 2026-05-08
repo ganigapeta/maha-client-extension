@@ -15,7 +15,7 @@ const BeneficiaryTable = ({
   searchParams, 
   onSelectionChange,
   tabType = 'new',
-  setSelectedDisbursementsSearch
+  setSelectedTableData
 }) => {
   const [selectedFamilies, setSelectedFamilies] = useState(new Set());
   const [selectedDisbursements, setSelectedDisbursements] = useState({});
@@ -54,6 +54,7 @@ const BeneficiaryTable = ({
       const selectedData = buildPayload();
       onSelectionChange(selectedData, tabType);
     }
+    setSelectedTableData({ families: selectedFamilies, disbursements: selectedDisbursements });
   }, [selectedFamilies, selectedDisbursements]);
 
   // Pagination calculations
@@ -527,7 +528,7 @@ const BeneficiaryTable = ({
 
                     {/* Total Benefit Amount - Only on first row, hide if no Aadhaar linked account */}
                     <td className="px-4 py-3 font-bold text-green-600">
-                      {isFirstMember && hasAadhaarLinked ? `₹${totalBenefit}` : ''}
+                      {isFirstMember && hasAadhaarLinked ? `₹ ${totalBenefit}` : ''}
                     </td>
 
                     {/* Select Checkbox - Only on first row, MOVED TO LAST COLUMN, disabled if no Aadhaar linked */}
