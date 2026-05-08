@@ -1,3 +1,5 @@
+import { buildHeaders } from "../config";
+
 export async function fetchDepartmentsBasedOnRoles(roleIds) {
   try {
 
@@ -10,11 +12,7 @@ export async function fetchDepartmentsBasedOnRoles(roleIds) {
       `/o/c/departments/?filter=${encodeURIComponent(filter)}`,
       {
         method: "GET",
-        headers: {
-         "Accept": "application/json",
-          "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "" 
-        },
+        headers: buildHeaders(),
         credentials: "include"
       }
     );

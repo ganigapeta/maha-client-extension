@@ -35,15 +35,13 @@
 //   }
 // ];
 
+import { buildHeaders, buildHeadersDocument } from "../config";
+
 async function fetchDDOMasterById(id) {
   try {
     const response = await fetch(`/o/c/ddomasters/${id}`, {
       method: "GET",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "x-csrf-token": window.Liferay?.authToken || "",
-      },
+      headers: buildHeaders(),
       credentials: "include",
     });
     if (!response.ok) return null;
@@ -204,11 +202,7 @@ const aadhaarRefCache = new Map();
 function buildJsonFetchOptions() {
   return {
     method: "GET",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "x-csrf-token": window.Liferay?.authToken || "",
-    },
+    headers: buildHeaders(),
     credentials: "include",
   };
 }
@@ -232,11 +226,7 @@ async function getAadhaar(aadhaarRefNumber) {
     "/o/mhdbt-headless-service/v1.0/get-aadhaar-by-aadhaarref",
     {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "x-csrf-token": window.Liferay?.authToken || "",
-      },
+      headers: buildHeaders(),
       credentials: "include",
       body: JSON.stringify({
         aadhaarOrRefNumber: safeAadhaarRefNumber,
@@ -467,11 +457,7 @@ async function fetchDDOMasterByCode(ddoCode) {
       `/o/c/ddomasters?page=1&pageSize=20&search=${encodeURIComponent(ddoCode)}`,
       {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
-        },
+        headers: buildHeaders(),
         credentials: "include",
       },
     );
@@ -496,11 +482,7 @@ async function fetchDDOSchemeMappingBySchemeConfiguratorId(
       `/o/c/ddoschememappings?nestedFields=ddoMaster,schemeConfigurator&page=1&pageSize=20&search=${encodeURIComponent(schemeConfiguratorId)}`,
       {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
-        },
+        headers: buildHeaders(),
         credentials: "include",
       },
     );
@@ -562,11 +544,7 @@ async function generatePFMSPaymentXML(payload) {
       "/o/mhdbt-headless-service/v1.0/generate-pfms-payment-xml",
       {
         method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
-        },
+        headers: buildHeaders(),
         body: JSON.stringify(payload),
         credentials: "include",
       },
@@ -623,10 +601,7 @@ async function generatePFMSPaymentXMLWithPfx({
       "/o/mhdbt-headless-service/v1.0/generate-pfms-payment-xml-with-pfx",
       {
         method: "POST",
-        headers: {
-          Accept: "application/json",
-          "x-csrf-token": window.Liferay?.authToken || "",
-        },
+        headers: buildHeadersDocument(),
         body: formData,
         credentials: "include",
       },

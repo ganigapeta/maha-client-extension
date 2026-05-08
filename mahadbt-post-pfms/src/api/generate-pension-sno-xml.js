@@ -1,3 +1,5 @@
+import { buildHeaders } from "../config";
+
 function getStringValue(value) {
   return String(value ?? "").trim();
 }
@@ -64,11 +66,7 @@ function buildCreditReference(debitReference, index) {
 function buildJsonFetchOptions() {
   return {
     method: "GET",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "x-csrf-token": window.Liferay?.authToken || "",
-    },
+    headers: buildHeaders(),
     credentials: "include",
   };
 }
@@ -162,11 +160,7 @@ async function getAadhaar(aadhaarRefNumber) {
     "/o/mhdbt-headless-service/v1.0/get-aadhaar-by-aadhaarref",
     {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "x-csrf-token": window.Liferay?.authToken || "",
-      },
+      headers: buildHeaders(),
       credentials: "include",
       body: JSON.stringify({
         aadhaarOrRefNumber: safeAadhaarRefNumber,

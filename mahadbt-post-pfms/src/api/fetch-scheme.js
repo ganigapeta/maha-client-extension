@@ -1,3 +1,5 @@
+import { buildHeaders } from "../config";
+
 export async function fetchSchemeNameForDDO(departmentValue, setMasterData, roles) {
   try {
     const departmentId = departmentValue?.split("_")[0];
@@ -26,11 +28,7 @@ export async function fetchSchemeNameForDDO(departmentValue, setMasterData, role
     const response = await fetch(
       `/o/c/schemeconfigurators?filter=${encodeURIComponent(filter)}&pageSize=50`,
       {
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-          "x-csrf-token": window.Liferay?.authToken || ""
-        },
+        headers: buildHeaders(),
         credentials: "include"
       }
     );

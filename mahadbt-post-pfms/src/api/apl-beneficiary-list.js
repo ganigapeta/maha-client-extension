@@ -1,4 +1,81 @@
-import { buildHeaders } from "../config";
+import { buildHeaders, getLiferayUserId } from "../config";
+import { apiService } from "./external-api";
+
+export async function fetchBillList(
+  data,
+  setScheme,
+  isPensionOrAssistanceDDO = false,
+) {
+  try {
+    const schemeConfiguratorId = data.schemeName?.split("_")[0];
+    const fetchSchemeData = await fetchSchemeById(schemeConfiguratorId);
+    console.log(
+      "Scheme Data based on Department and Scheme Name::::",
+      fetchSchemeData,
+    );
+
+    // Step 1: Get bill numbers for this scheme from billmanagements
+    const schemeCode = fetchSchemeData[0]?.schemeCode || "";
+    let validBatchIDs = [];
+
+    if (schemeCode) {
+      const statusFilter = isPensionOrAssistanceDDO
+        ? "Signed by DDO"
+        : "Completed";
+
+      const billRes = await fetch(
+        `/o/c/billmanagements?filter=${encodeURIComponent(
+          `schemeCode eq '${schemeCode}' and submittedStatus eq '${statusFilter}' and submittedStatus ne 'XML Generated'`,
+        )}&pageSize=200`,
+        {
+          headers: buildHeaders(),
+          credentials: "include",
+        },
+      );
+      const billData = await billRes.json();
+      validBatchIDs = (billData?.items || [])
+        .map((b) => b.billNumber)
+        .filter(Boolean);
+    }
+
+    console.log("validBatchIDs for scheme:", schemeCode, validBatchIDs);
+
+    // Step 2: Fetch allotment records filtered by those batchIDs
+    if (validBatchIDs.length === 0) {
+      setScheme(fetchSchemeData[0] || {});
+      return [];
+    }
+
+    const batchFilter = validBatchIDs
+      .map((id) => `batchID eq '${id}'`)
+      .join(" or ");
+
+    const filterStr = `status eq 0 and (${batchFilter})`;
+    const filter = encodeURIComponent(filterStr);
+
+    const payload = {
+            bill_no: validBatchIDs,
+            fy: data?.financialYear,
+            installment: data?.installment,
+            distCode: data?.distCode,
+            userId: getLiferayUserId()
+          };
+
+    const billResp = await apiService.getBillDetails(payload);
+
+    const result = await billResp.json();
+    console.log("Beneficiary Bill List:", result);
+    // const enrichedItems = await enrichBeneficiariesWithBillData(
+    //   result?.items || [],
+    // );
+
+    setScheme(fetchSchemeData[0] || {});
+    return billResp;
+  } catch (err) {
+    console.error("Error fetching departments:", err);
+    return [];
+  }
+}
 
 export async function fetchBeneficiaryList(
   data,

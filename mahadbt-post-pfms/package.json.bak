@@ -1,8 +1,7 @@
 {
-  "name": "@liferay/mahadbt-post-pfms",
+  "name": "@liferay/mahadbt-disbursement-payment",
   "version": "0.1.0",
   "private": true,
-  "proxy": "https://mahadbt2-qa-dashboard.quantela.com",
   "dependencies": {
     "@babel/core": "^7.28.4",
     "@babel/preset-env": "^7.28.3",
@@ -23,8 +22,6 @@
     "babel-loader": "^10.0.0",
     "bootstrap": "^5.3.8",
     "cross-env": "^10.1.0",
-    "jspdf": "^2.5.1",
-    "jspdf-autotable": "^3.8.4",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-beautiful-dnd": "^13.1.1",

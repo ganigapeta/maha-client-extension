@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'; import BeneficiaryFilter from './BeneficiaryFilter';
 import { getUserRolesById } from '../api/fetch-role';
 import BeneficiaryTable from './BeneficiaryTable';
-import { getLiferayUserId, isSignedIn } from '../config';
+import { buildHeaders, buildHeadersDocument, getLiferayUserId, isSignedIn } from '../config';
+import { handleUpdateExternalBill } from '../utils/APLUpdate';
+import APLBeneficiaryFilter from './APLBeneficiaryFilter';
+import APLBeneficiaryTable from './APLBeneficiaryTable';
 const BeneficiaryList = () => {
   const MAX_RFT_PFX_FILE_SIZE = 2 * 1024 * 1024;
   const [scheme, setScheme] = useState(null);
@@ -20,6 +23,8 @@ const BeneficiaryList = () => {
   const [rftPasswordError, setRftPasswordError] = useState("");
   const [showRFTPassword, setShowRFTPassword] = useState(false);
   const [showRFTConfirmPassword, setShowRFTConfirmPassword] = useState(false);
+
+  const [isAPL, setAPL] = useState(true);
 
   const [rftRows, setRftRows] = useState([]);
   const [rftLoading, setRftLoading] = useState(false);
@@ -77,6 +82,7 @@ const BeneficiaryList = () => {
         return (
           roleName.includes("pension ddo") ||
           roleName.includes("assistance ddo") ||
+          roleName.includes("apl ddo") ||
           roleName.includes("wcdd ddo")
         );
       })?.name || ""
@@ -88,11 +94,15 @@ const BeneficiaryList = () => {
     return (
       normalized.includes("pension ddo") ||
       normalized.includes("assistance ddo") ||
+      normalized.includes("apl ddo") ||
       normalized.includes("wcdd ddo")
     );
   }, [matchedRoleName]);
 
   const isPensionRole = String(matchedRoleName).toLowerCase().includes("pension ddo");
+
+  const isAPLRole = String(matchedRoleName).toLowerCase().includes("apl ddo");
+
 
   useEffect(() => {
     const fetchUserRoles = async () => {
@@ -135,7 +145,7 @@ const BeneficiaryList = () => {
       try {
         const schemeType = isPensionRole
           ? "Pension Schemes"
-          : "Special Assistance Schemes";
+          : isAPLRole? "Food Scheme" :"Special Assistance Schemes";
 
         // Step 1: get schemeConfigurators filtered by schemeType to get scheme codes
         const isWCDDDDO = String(matchedRoleName).toLowerCase().includes("wcdd ddo");
@@ -145,10 +155,7 @@ const BeneficiaryList = () => {
 
         const schemeRes = await fetch(
           `/o/c/schemeconfigurators?filter=${encodeURIComponent(schemeFilter)}&pageSize=200`, {
-          headers: {
-            Accept: "application/json",
-            "x-csrf-token": window.Liferay?.authToken || "",
-          },
+          headers: buildHeaders(),
           credentials: "include",
         }
         );
@@ -178,10 +185,7 @@ const BeneficiaryList = () => {
         const res = await fetch(
           `/o/c/billmanagements?filter=${encodeURIComponent(filterStr)}&pageSize=200&sort=dateCreated:desc`,
           {
-            headers: {
-              Accept: "application/json",
-              "x-csrf-token": window.Liferay?.authToken || "",
-            },
+            headers: buildHeaders(),
             credentials: "include",
           }
         );
@@ -236,33 +240,56 @@ const BeneficiaryList = () => {
             </ul>
 
             {activeTab === "generate-xml" && (
-              <>
-                {hasSignedRft ? (
-                  <>
-                    <BeneficiaryFilter
-                      roles={roles}
-                      setSearchResults={setSearchResults}
-                      setSearchData={setSearchData}
-                      setScheme={setScheme}
-                      isPensionDDO={isPensionRole}
-                      isAssistanceDDO={!isPensionRole && isDDORole}
-                    />
-                    <BeneficiaryTable
-                      data={searchResults}
-                      scheme={scheme}
-                      hasSNORole={hasSNORole}
-                      isPensionRole={isPensionRole}
-                      roleName={matchedRoleName}
-                      setSearchResults={setSearchResults}
-                    />
-                  </>
-                ) : (
-                  <div className="alert alert-info">
-                    Please sign the RFT first. Beneficiaries will be visible in Generate XML only after the document is digitally signed.
-                  </div>
-                )}
-              </>
-            )}
+  <>
+    {hasSignedRft ? (
+      <>
+        {isAPL ? (
+          <>
+            <APLBeneficiaryFilter
+              roles={roles}
+              setSearchResults={setSearchResults}
+              setSearchData={setSearchData}
+              setScheme={setScheme}
+              isPensionDDO={isPensionRole}
+              isAssistanceDDO={!isPensionRole && isDDORole}
+            />
+            <APLBeneficiaryTable
+              data={searchResults}
+              scheme={scheme}
+              hasSNORole={hasSNORole}
+              isPensionRole={isPensionRole}
+              roleName={matchedRoleName}
+              setSearchResults={setSearchResults}
+            />
+          </>
+        ) : (
+          <>
+            <BeneficiaryFilter
+              roles={roles}
+              setSearchResults={setSearchResults}
+              setSearchData={setSearchData}
+              setScheme={setScheme}
+              isPensionDDO={isPensionRole}
+              isAssistanceDDO={!isPensionRole && isDDORole}
+            />
+            <BeneficiaryTable
+              data={searchResults}
+              scheme={scheme}
+              hasSNORole={hasSNORole}
+              isPensionRole={isPensionRole}
+              roleName={matchedRoleName}
+              setSearchResults={setSearchResults}
+            />
+          </>
+        )}
+      </>
+    ) : (
+      <div className="alert alert-info">
+        Please sign the RFT first. Beneficiaries will be visible in Generate XML only after the document is digitally signed.
+      </div>
+    )}
+  </>
+)}
 
             {activeTab === "generate-rft" && (
               <div className="table-responsive">
@@ -440,8 +467,11 @@ const BeneficiaryList = () => {
                       }
 
                       try {
+                        if(!isAPL){
                         // Step 1: fetch existing PDF from beamsPdfUrl as blob -> base64
+                        console.log(pdfUrl, "PDF URL:::::")
                         const pdfRes = await fetch(pdfUrl, {
+                          headers: buildHeadersDocument(),
                           credentials: "include",
                         });
 
@@ -477,10 +507,7 @@ const BeneficiaryList = () => {
 
                         const signRes = await fetch("/o/mhdbt-headless-service/v1.0/pdf/sign", {
                           method: "POST",
-                          headers: {
-                            Accept: "application/json",
-                            "x-csrf-token": window.Liferay?.authToken || "",
-                          },
+                          headers: buildHeadersDocument(),
                           credentials: "include",
                           body: formData,
                         });
@@ -494,11 +521,7 @@ const BeneficiaryList = () => {
                         // Step 3: patch billmanagements with signed URL + status "Signed by DDO"
                         await fetch(`/o/c/billmanagements/${selectedRftRow.id}`, {
                           method: "PATCH",
-                          headers: {
-                            Accept: "application/json",
-                            "Content-Type": "application/json",
-                            "x-csrf-token": window.Liferay?.authToken || "",
-                          },
+                          headers: buildHeaders(),
                           credentials: "include",
                           body: JSON.stringify({
                             beamsPdfUrl: signJson.downloadUrl,
@@ -515,7 +538,33 @@ const BeneficiaryList = () => {
                               : r
                           )
                         );
+                      }else {
 
+                         // Step 3: patch billmanagements with signed URL + status "Signed by DDO"
+                        await fetch(`/o/c/billmanagements/${selectedRftRow.id}`, {
+                          method: "PATCH",
+                          headers: buildHeaders(),
+                          credentials: "include",
+                          body: JSON.stringify({
+                            // beamsPdfUrl: selectedRftRow.beamsPdfUrl,
+                            // beamsPdfId: signJson.fileEntryId,
+                            submittedStatus: "Signed by DDO"
+                          }),
+                        });
+
+                        // Step 4: refresh rftRows
+                        setRftRows((prev) =>
+                          prev.map((r) =>
+                            r.id === selectedRftRow.id
+                              ? { ...r, submittedStatus: "Signed by DDO" }
+                              : r
+                          )
+                        );
+
+                        // If APL DDO - Step 5: patch APL External Data with signed URL + status "Signed by DDO"
+                        await handleUpdateExternalBill(selectedRftRow.billNumber);
+
+                      }
                         closeRFTModal();
                         showToast("RFT signed successfully by DDO.", "success");
                       } catch (err) {

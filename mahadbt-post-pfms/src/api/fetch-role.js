@@ -1,3 +1,4 @@
+import { buildHeaders } from '../config';
 import { getAccessToken } from './auth';
 export async function getUserRolesById(userId) {
   try {
@@ -7,12 +8,7 @@ export async function getUserRolesById(userId) {
       `/o/headless-admin-user/v1.0/user-accounts/${userId}`,
       {
         method: "GET",
-        headers: {
-          // "Authorization" : `Bearer ${token}`,
-          "x-csrf-token": window.Liferay?.authToken || "",
-          "Accept" : "application/json",
-         "Content-Type": "application/json",
-        },
+        headers: buildHeaders(),
         credentials: "include"
       }
     );

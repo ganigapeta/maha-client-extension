@@ -1,5 +1,5 @@
-const USE_HARDCODED_AUTH = false; // 👈 flip this one flag
-const USE_HARDCODED_USER = false; // 👈 flip this one flag
+const USE_HARDCODED_AUTH = true; // 👈 flip this one flag
+const USE_HARDCODED_USER = true; // 👈 flip this one flag
 
 export const AUTH_TOKEN = USE_HARDCODED_AUTH
   ? "Basic " + btoa("prabhudasu:root")
@@ -38,7 +38,7 @@ export const buildHeadersDocument = () => {
 export const getLiferayUserId = () => {
   try {
     return USE_HARDCODED_USER
-      ? 3072462
+      ? 3230450//QA -3230450 : UAT - 8636963
       : window.Liferay.ThemeDisplay.getUserId();
   } catch (error) {
     console.error("Error getting user ID:", error);
