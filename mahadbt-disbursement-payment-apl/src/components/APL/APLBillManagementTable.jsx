@@ -2088,7 +2088,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
             <div className="d-flex align-items-center">
               <label className="me-2">Show entries:</label>
               <select
-                className="form-select w-auto"
+                className="form-select w-25"
                 value={entriesPerPageState}
                 onChange={handleEntriesPerPageChange}
               >
