@@ -113,12 +113,12 @@ const signingRowData = {
   }, [submittedBillList, apiRes]);
 
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    const formatted = new Intl.NumberFormat('en-IN', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
+
+    return `₹ ${formatted}`;
   };
 
   const formatAmountIndian = (value) => {

@@ -31,8 +31,7 @@ const SchemeSearch = ({ userRole, userId, officeData }) => {
   const [loading, setLoading] = useState(false);
   const [isAFSO, setIsAFSO] = useState(userRole === 'AFSO');
   const [isFPSMultiSelect, setFPSMultiSelect] = useState(false);
-    const [selectedDisbursementsSearch, setSelectedDisbursementsSearch] = useState({});
-  
+  const [selectedTableData, setSelectedTableData] = useState({ families: new Set(), disbursements: [] });
 
   // State for AFSO tabbed interface
   const [activeTab, setActiveTab] = useState('new');
@@ -269,6 +268,21 @@ useEffect(() => {
       setModalMessage({
         title: 'Validation Error',
         message: 'Please select at least one family from either tab before submitting.'
+      });
+      setShowErrorModal(true);
+      return;
+    }
+
+    const allFamiliesExist = [...selectedTableData.families].every(
+      (familyId) =>
+        Object.hasOwn(selectedTableData.disbursements, familyId)
+    );
+
+    if (!allFamiliesExist) {
+      setModalMessage({
+        title: 'Validation Error',
+        message:
+          'Please select at least one member from each selected family for disbursement.',
       });
       setShowErrorModal(true);
       return;
@@ -551,7 +565,7 @@ useEffect(() => {
                   searchParams={formData}
                   onSelectionChange={handleSelectionChange}
                   tabType="new"
-                  setSelectedDisbursementsSearch = {setSelectedDisbursementsSearch}
+                  setSelectedTableData={setSelectedTableData}
                 />
               </div>
               
@@ -562,7 +576,7 @@ useEffect(() => {
                   searchParams={formData}
                   onSelectionChange={handleSelectionChange}
                   tabType="old"
-                  setSelectedDisbursementsSearch = {setSelectedDisbursementsSearch}
+                  setSelectedTableData={setSelectedTableData}
                 />
               </div>
             </div>

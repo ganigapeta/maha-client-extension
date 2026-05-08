@@ -417,7 +417,7 @@ const BeneficiaryTableDFSO = ({ beneficiaries, searchParams, userRole }) => {
                       )}
                     </td>
                     <td className="px-4 py-3 font-bold text-green-600">
-                      {isFirstMember && hasAadhaarLinked ? `₹${totalBenefit}` : ''}
+                      {isFirstMember && hasAadhaarLinked ? `₹ ${totalBenefit}` : ''}
                     </td>
                     <td className={`px-4 py-3 ${!isFirstMember && 'border-l-4 border-gray-200'}`}>
                       {isFirstMember && (

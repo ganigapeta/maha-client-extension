@@ -230,18 +230,18 @@ const totalBeneficiaryAmount = safeData.reduce((total, item) => {
                     <td>{formatDate(item.dateModified)}</td>
                     <td>{item.status?.label_i18n || "-"}</td>
                     {isPensionRole ? (
-                  <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
+                  <td className="text-end">₹ {(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
                 ) : 
                   hasCoopRole? (
-                    <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
+                    <td className="text-end">₹ {(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
                   ):
                 (
                   <>
-                    <td className="text-end">₹{(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
-                    <td className="text-end">₹{(item?.installment2 ?? 0).toLocaleString("en-IN")}</td>
+                    <td className="text-end">₹ {(item?.installment1 ?? 0).toLocaleString("en-IN")}</td>
+                    <td className="text-end">₹ {(item?.installment2 ?? 0).toLocaleString("en-IN")}</td>
                   </>
                 )}
-                <td className="text-end">₹{((item?.installment1 ?? 0) + (item?.installment2 ?? 0)).toLocaleString("en-IN")}</td>
+                <td className="text-end">₹ {((item?.installment1 ?? 0) + (item?.installment2 ?? 0)).toLocaleString("en-IN")}</td>
                   </tr>
                 ))
               ) : (
@@ -260,7 +260,7 @@ const totalBeneficiaryAmount = safeData.reduce((total, item) => {
             <tfoot className="table-secondary">
               <tr>
                 <td colSpan={isSnoRole || hasCoopRole ? "9" : "11"} className="text-end fw-bold">Total Beneficiary Amount:</td>
-                <td className="text-end fw-bold">₹{totalBeneficiaryAmount.toFixed(2)}</td>
+                <td className="text-end fw-bold">₹ {totalBeneficiaryAmount.toFixed(2)}</td>
               </tr>
             </tfoot>
           )}

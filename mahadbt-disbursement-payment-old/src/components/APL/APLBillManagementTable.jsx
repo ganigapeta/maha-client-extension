@@ -150,7 +150,7 @@ const APLBillManagementTable = ({ selectedBeneficiaries = [], apiRes, allocateIn
 
   const formatCurrency = (amount) => {
     const numAmount = parseFloat(amount);
-    if (isNaN(numAmount)) return '₹0';
+    if (isNaN(numAmount)) return '₹ 0';
     return `₹${numAmount.toLocaleString('en-IN')}`;
   };
 
